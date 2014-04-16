@@ -60,7 +60,7 @@ public class HearingCheck extends Activity
 		
 		for(int i = 0; i<frequency.length; i++)
 		{
-			frequency[i] = 500*(int)Math.pow(2,i);
+			frequency[i] = 125*(int)Math.pow(2,i);
 		}
 		
 		if ((minSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT)) > sampleLength)
@@ -219,9 +219,19 @@ public class HearingCheck extends Activity
 		}	
 		
 	}
+	
 	public void addResultToText(){
 		
-		File list = new File(Environment.getExternalStorageDirectory(), "nameList.txt");
+		File list;
+		if(Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()))
+		{
+			list = new File(Environment.getExternalStorageDirectory(), "nameList.txt");
+		}
+		else
+		{
+			list = new File(this.getFilesDir(), "nameList.txt");
+		}
+		
 		Scanner name_search = null;
 		FileWriter fw = null;
 		String copy_data = "";
