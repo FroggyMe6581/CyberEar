@@ -42,8 +42,9 @@ public class MicRepeater extends Activity
 	private boolean finished = false;			// when done playing, finished is set to stop while-loop.  Only true long enough to stop.
 	private boolean playing = false;			// playing audio.  boolean to toggle effect of button
 	private int sampleRate = 44100;
-	private int sampleLength = 2048;			// default length of sample array to work with: ~0.05s.  Lengthened by minSize if nec'ary.
-	private int minSize;						// minimum size of sampleLength necessary; sampleLength is lengthened to this if nec'ary.
+	private int trackLength = 0; //2048;		// default length of sample array to work with: ~0.05s.  Lengthened by minSize if nec'ary.
+	private int minSize;						// minimum size of trackLength necessary; trackLength is lengthened to this if nec'ary.
+	private int bufferSize = 512;				// size of buffer when reading from AudioRecord and writing to AudioTrack
 	private double average = 0;					// RMS average of signal being sent to AudioTrack
 	private int maxVol;
 	
@@ -58,6 +59,8 @@ public class MicRepeater extends Activity
 	
 	private Timer timer;
 	private long period = (long) ( 250 );		// how often to update display, ie the volume bar location and numbers: 250ms
+	
+	private int countdown = 4;					//auto pressing button - empirically found start up procedure to clear buffers and run smoothly
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -172,26 +175,26 @@ public class MicRepeater extends Activity
 			}
 		}, 0, period);
 		
-		if((minSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT)) > sampleLength)
-			sampleLength = minSize;
+		if((minSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT)) > trackLength)
+			trackLength = minSize;
 		
-		if((minSize = AudioRecord.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT)) > sampleLength)
-			sampleLength = minSize;
+		if((minSize = AudioRecord.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT)) > trackLength)
+			trackLength = minSize;
 		
 		if(Build.VERSION.SDK_INT >= 7)
 		{
 			audioRecord = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER, sampleRate, AudioFormat.CHANNEL_IN_MONO,
-										  AudioFormat.ENCODING_PCM_16BIT, sampleLength);
+										  AudioFormat.ENCODING_PCM_16BIT, trackLength*2);
 		}
 		else
 		{
 			audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO,
-										  AudioFormat.ENCODING_PCM_16BIT, sampleLength);
+										  AudioFormat.ENCODING_PCM_16BIT, trackLength*2);
 		}
 		
 		
 		audioTrack = new AudioTrack( AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
-				 					 AudioFormat.ENCODING_PCM_16BIT, sampleLength, AudioTrack.MODE_STREAM);
+				 					 AudioFormat.ENCODING_PCM_16BIT, trackLength*2, AudioTrack.MODE_STREAM);
 		
 		//if(AcousticEchoCanceler.isAvailable())
 		//	AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
@@ -224,34 +227,37 @@ public class MicRepeater extends Activity
 	
 	public void playTone()
 	{
+		bufferSize = this.trackLength;			//tried a shorter bufferSize, like 512 and 256, yet making it the same was best.
+		byte[] samples = new byte[bufferSize];
+		int samplesRead;
+		
 		average = 0;
+		short sampleShort = 0;
+		long avgSum = 0;
 
 		audioRecord.startRecording();
 		audioTrack.play();
-		byte[] samples = new byte[sampleLength];
 		
-		byte sampleShort = 0;
-		long avgSum = 0;
 		
-		//android.os.Process.setThreadPriority(-19);
 		while(!finished)
 		{
-			  audioRecord.read(samples, 0, sampleLength);
+			  android.os.Process.setThreadPriority(-19);
+			  samplesRead = audioRecord.read(samples, 0, bufferSize);
 		      // fill samples array
-		      for( int i = 0; i < sampleLength; i++ )
+		      for( int i = 0; i < samplesRead; i++ )
 		      {
 		          // sampleShort is only a fraction of maximum short (32767), as scaled by -1 to 1 sine wave * 0 to 1 amplitude
 		          sampleShort = samples[i];
 		          avgSum += ((long)sampleShort)*((long)sampleShort);
 		      }
-		      average = Math.sqrt( ((double)avgSum)/((double)sampleLength) );
+		      average = Math.sqrt( ((double)avgSum)/((double)samplesRead) );
 		      avgSum = 0;
 		      // write root-mean-square average to textView
 		      
 		      
 		      
 		      // ship our sample off to AudioTrack
-		      audioTrack.write(samples, 0, sampleLength);
+		      audioTrack.write(samples, 0, samplesRead);
 		}
 		audioTrack.pause();
 		audioTrack.flush();
@@ -269,18 +275,44 @@ public class MicRepeater extends Activity
 			Thread audioT = new Thread(new Runnable() {
 	            public void run()
 	            {
-	            	//android.os.Process.setThreadPriority(-19);
+	            	android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO /*-19*/ );	//slower (or not :( )
 	                playTone();
 	            }
 			});
-			//audioT.setPriority(Thread.MAX_PRIORITY);
+			audioT.setPriority(Thread.MAX_PRIORITY);	//just do both, because empirically, it's working!
+			while(audioT.getPriority() != Thread.MAX_PRIORITY)
+			{
+				audioT.setPriority(Thread.MAX_PRIORITY);
+			}
 			audioT.start();
+			
+			if(countdown > 0)
+			{
+				--countdown;
+				try{
+				Thread.sleep(500);
+				} catch (InterruptedException e) { }
+				playButtonPressed((View)findViewById(R.id.mrlayout));
+			}
 		}
 		else
 		{
 			playing = false;
 			finished = true;
 			b.setText("Start Playback");
+			
+			if(countdown > 0)
+			{
+				--countdown;
+				try{
+				Thread.sleep(500);
+				} catch (InterruptedException e) { }
+				playButtonPressed((View)findViewById(R.id.mrlayout));
+				return;														//very important for recursion to work properly!!!
+			}
+			
+			if(countdown == 0)
+				countdown = 4;
 		}
 	}
 	
