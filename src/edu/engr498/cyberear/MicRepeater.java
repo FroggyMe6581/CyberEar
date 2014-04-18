@@ -181,20 +181,28 @@ public class MicRepeater extends Activity
 		if((minSize = AudioRecord.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT)) > trackLength)
 			trackLength = minSize;
 		
-		if(Build.VERSION.SDK_INT >= 7)
+		if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
 		{
 			audioRecord = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER, sampleRate, AudioFormat.CHANNEL_IN_MONO,
 										  AudioFormat.ENCODING_PCM_16BIT, trackLength*2);
 		}
+		else if(Build.VERSION.SDK_INT >= 7)
+		{
+			audioRecord = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER, sampleRate, AudioFormat.CHANNEL_IN_MONO,
+										  AudioFormat.ENCODING_PCM_16BIT, trackLength);
+		}
 		else
 		{
 			audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO,
-										  AudioFormat.ENCODING_PCM_16BIT, trackLength*2);
+					  AudioFormat.ENCODING_PCM_16BIT, trackLength);
 		}
 		
-		
-		audioTrack = new AudioTrack( AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
+		if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
+			audioTrack = new AudioTrack( AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
 				 					 AudioFormat.ENCODING_PCM_16BIT, trackLength*2, AudioTrack.MODE_STREAM);
+		else
+			audioTrack = new AudioTrack( AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
+					 AudioFormat.ENCODING_PCM_16BIT, trackLength, AudioTrack.MODE_STREAM);
 		
 		//if(AcousticEchoCanceler.isAvailable())
 		//	AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
@@ -227,13 +235,18 @@ public class MicRepeater extends Activity
 	
 	public void playTone()
 	{
-		bufferSize = this.trackLength;			//tried a shorter bufferSize, like 512 and 256, yet making it the same was best.
+		bufferSize = 128;
+		
+		if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
+			bufferSize = this.trackLength;			//tried a shorter bufferSize, like 512 and 256, yet making it the same was best.
+		
 		byte[] samples = new byte[bufferSize];
 		int samplesRead;
 		
 		average = 0;
 		short sampleShort = 0;
 		long avgSum = 0;
+		short zero = 0;
 
 		audioRecord.startRecording();
 		audioTrack.play();
@@ -247,7 +260,7 @@ public class MicRepeater extends Activity
 		      for( int i = 0; i < samplesRead; i++ )
 		      {
 		          // sampleShort is only a fraction of maximum short (32767), as scaled by -1 to 1 sine wave * 0 to 1 amplitude
-		          sampleShort = samples[i];
+		          sampleShort = (short)(0x000000FF & (int)samples[i]);
 		          avgSum += ((long)sampleShort)*((long)sampleShort);
 		      }
 		      average = Math.sqrt( ((double)avgSum)/((double)samplesRead) );
@@ -286,14 +299,15 @@ public class MicRepeater extends Activity
 			}
 			audioT.start();
 			
-			if(countdown > 0)
-			{
-				--countdown;
-				try{
-				Thread.sleep(500);
-				} catch (InterruptedException e) { }
-				playButtonPressed((View)findViewById(R.id.mrlayout));
-			}
+			if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
+				if(countdown > 0)
+				{
+					--countdown;
+					try{
+					Thread.sleep(500);
+					} catch (InterruptedException e) { }
+					playButtonPressed((View)findViewById(R.id.mrlayout));
+				}
 		}
 		else
 		{
@@ -301,18 +315,20 @@ public class MicRepeater extends Activity
 			finished = true;
 			b.setText("Start Playback");
 			
-			if(countdown > 0)
-			{
-				--countdown;
-				try{
-				Thread.sleep(500);
-				} catch (InterruptedException e) { }
-				playButtonPressed((View)findViewById(R.id.mrlayout));
-				return;														//very important for recursion to work properly!!!
-			}
+			if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
+				if(countdown > 0)
+				{
+					--countdown;
+					try{
+					Thread.sleep(500);
+					} catch (InterruptedException e) { }
+					playButtonPressed((View)findViewById(R.id.mrlayout));
+					return;														//very important for recursion to work properly!!!
+				}
 			
-			if(countdown == 0)
-				countdown = 4;
+			if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
+				if(countdown == 0)
+					countdown = 4;
 		}
 	}
 	
