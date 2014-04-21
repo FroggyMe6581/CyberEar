@@ -4,8 +4,12 @@
     <string name="app_name">CyberEar HAT</string>
     <string name="action_settings">Settings</string>
     <string name="invite">Welcome to CyberEar.\nSelect option below.</string>
-    <string name="config_button">Select Configuration\n\nor\n\nSet Up New Custom Configuration</string>
-    <string name="run_button">RUN</string>
+    <!--    <string name="config_button">Select Configuration\n\nor\n\nSet Up New Custom Configuration</string>
+    		<string name="run_button">RUN</string>
+    
+     -->
+    <string name="config_button">Select User\n\nor\n\n Perform New Hearing Testn</string>
+    <string name="run_button">Start Hearing Aid</string>
     <string name="title_activity_mic_repeater">Hearing Amplifier</string>
     <string name="hello_world">Hello world!</string>
     <string name="button_start">Start Playback</string>

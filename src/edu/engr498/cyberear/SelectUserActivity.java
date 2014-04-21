@@ -16,8 +16,14 @@ import android.app.Activity;
 import android.content.Intent;
 import android.view.Menu;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup.LayoutParams;
+import android.view.ViewGroup.MarginLayoutParams;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 public class SelectUserActivity extends Activity
 {
@@ -31,7 +37,7 @@ public class SelectUserActivity extends Activity
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_select_user);
-		
+		final RelativeLayout r1 = (RelativeLayout) findViewById(R.id.rlSelectUser);
 		start = (Button) findViewById(R.id.button1);
 		name_input = (EditText) findViewById(R.id.editText1);
 		
@@ -45,8 +51,40 @@ public class SelectUserActivity extends Activity
 				
 				if(userNameCheck(user_name))
 				{
-					//to the mode-selection page
+					RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+					params.addRule(RelativeLayout.BELOW, R.id.button1);
+					params.addRule(RelativeLayout.CENTER_HORIZONTAL);
+					Button hearingCheck = new Button(getBaseContext());
+					hearingCheck.setLayoutParams(params);
+					hearingCheck.setText("Perform new Hearing Test");
+					hearingCheck.setId(999);
+					hearingCheck.setOnClickListener(new OnClickListener(){
+						@Override
+						public void onClick(View v) {
+							Intent intent = new Intent(SelectUserActivity.this, HearingCheck.class);
+							String title = name_input.getText().toString();
+							intent.putExtra(EXTRA_TITLE, title);
+							startActivity(intent);							
+						}
+						
+					});
+					r1.addView(hearingCheck);
 					
+					Button hearingAid = new Button(getBaseContext());
+					RelativeLayout.LayoutParams params2 = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+					params2.addRule(RelativeLayout.BELOW, hearingCheck.getId());
+					params2.addRule(RelativeLayout.CENTER_HORIZONTAL);
+					hearingAid.setText("Continue to Hearing Aid");
+					hearingAid.setLayoutParams(params2);
+					hearingAid.setOnClickListener(new OnClickListener(){
+
+						@Override
+						public void onClick(View v) {
+						}	
+					});
+
+					r1.addView(hearingAid,params2);
+
 				}
 				else
 				{
@@ -79,7 +117,6 @@ public class SelectUserActivity extends Activity
 		
 		try {	//scanner exist
 			name_check = new Scanner(nameList);
-				
 			while(name_check.hasNext())
 			{
 					String aLine = name_check.nextLine();
