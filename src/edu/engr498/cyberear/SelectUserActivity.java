@@ -13,6 +13,8 @@ import java.util.Scanner;
 import android.os.Bundle;
 import android.os.Environment;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.view.Menu;
 import android.view.View;
@@ -51,7 +53,34 @@ public class SelectUserActivity extends Activity
 				
 				if(userNameCheck(user_name))
 				{
-					RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+					AlertDialog.Builder builder = new AlertDialog.Builder(SelectUserActivity.this);
+					builder.setMessage("Overwrite or Coninute to Hearing Aid")
+				       .setTitle("User exists")
+				       .setPositiveButton("Perform New Hearing Test",
+				        new DialogInterface.OnClickListener() {
+				            public void onClick(DialogInterface dialog, int whichButton) {
+								Intent intent = new Intent(SelectUserActivity.this, HearingCheck.class);
+								String title = name_input.getText().toString();
+								intent.putExtra(EXTRA_TITLE, title);
+								startActivity(intent);							 
+
+				            }
+				        })		
+				       .setNegativeButton("Continue to Hearing Aid",
+				        new DialogInterface.OnClickListener() {
+				            public void onClick(DialogInterface dialog, int whichButton) {
+				            }
+				        });
+
+				       
+				       
+					
+			
+
+					AlertDialog dialog = builder.create();
+					dialog.show();
+					
+/*					RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 					params.addRule(RelativeLayout.BELOW, R.id.button1);
 					params.addRule(RelativeLayout.CENTER_HORIZONTAL);
 					Button hearingCheck = new Button(getBaseContext());
@@ -64,7 +93,7 @@ public class SelectUserActivity extends Activity
 							Intent intent = new Intent(SelectUserActivity.this, HearingCheck.class);
 							String title = name_input.getText().toString();
 							intent.putExtra(EXTRA_TITLE, title);
-							startActivity(intent);							
+							startActivity(intent);							 
 						}
 						
 					});
@@ -84,7 +113,7 @@ public class SelectUserActivity extends Activity
 					});
 
 					r1.addView(hearingAid,params2);
-
+*/
 				}
 				else
 				{

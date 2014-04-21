@@ -67,8 +67,33 @@ public class HearingCheck extends Activity
 				 					 AudioFormat.ENCODING_PCM_16BIT, sampleLength*2, AudioTrack.MODE_STREAM);
 	}
 
+	/*
+	private synchronized void stopThread(Thread theThread)
+	{
+	    if (theThread != null)
+	    {
+	    	if(audioTrack!=null){
+		    	audioTrack.stop();
+	    		audioTrack.release();
+	    	}
+	    	tone = null;
+	    }
+	}
+	*/
 	@Override
-	
+	protected void onDestroy(){
+//		stopThread(tone);
+//		super.onDestroy();
+	}
+	@Override
+	protected void onPause(){
+//		stopThread(tone);
+	}
+	@Override
+	protected void onStop(){
+//		stopThread(tone);
+	}
+
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -143,6 +168,8 @@ public class HearingCheck extends Activity
 	            public void run()
 	            {
 	            	playTone(currentFreq);
+	            	// from http://stackoverflow.com/questions/8505707/android-best-and-safe-way-to-stop-thread
+	            	
 	            }
 			});
 			tone.start();
@@ -199,12 +226,13 @@ public class HearingCheck extends Activity
 			
 			freq_index++;
 			if(freq_index==frequency.length){
-				RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-				params.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.CENTER_HORIZONTAL);
-				b.setText("Done!!!");
-				b.setLayoutParams(params);
-				addResultToText();
 				rl.removeView(a);
+				RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+				params.addRule(RelativeLayout.CENTER_VERTICAL);
+				params.addRule(RelativeLayout.CENTER_HORIZONTAL);
+				b.setLayoutParams(params);				
+				b.setText("Done!!!");
+				addResultToText();
 			}else{
 				b.setText("I Can Hear");
 				finished = false;
@@ -230,6 +258,7 @@ public class HearingCheck extends Activity
 		Scanner name_search = null;
 		FileWriter fw = null;
 		String copy_data = "";
+		
 		
 		try {	//scanner exist
 			name_search = new Scanner(list);
