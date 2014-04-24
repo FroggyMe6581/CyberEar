@@ -24,13 +24,14 @@ public final class R {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int action_settings=0x7f08000e;
+        public static final int action_settings=0x7f08000f;
         public static final int button1=0x7f080002;
         public static final int button2=0x7f080003;
         public static final int button_center=0x7f080008;
         public static final int editText1=0x7f08000d;
         public static final int mrlayout=0x7f080004;
         public static final int progressBar1=0x7f080001;
+        public static final int radioGroup1=0x7f08000e;
         public static final int seekBar_bal=0x7f080009;
         public static final int seekBar_vol=0x7f080005;
         public static final int textView1=0x7f080000;
@@ -76,6 +77,7 @@ public final class R {
         public static final int invite=0x7f050002;
         public static final int left_up=0x7f050012;
         public static final int run_button=0x7f050004;
+        public static final int select_name=0x7f050020;
         public static final int set_amp=0x7f05000a;
         public static final int set_freq=0x7f050008;
         public static final int start_button=0x7f05001a;

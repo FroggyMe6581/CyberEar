@@ -28,6 +28,7 @@ import android.widget.TextView;
 
 public class HearingCheck extends Activity
 {
+	public final static String EXTRA_TITLE = "com.example.hat_demo_1.TITLE";
 	private AudioTrack audioTrack;
 	private boolean finished = false;
 	private boolean playing = false;
@@ -39,11 +40,14 @@ public class HearingCheck extends Activity
 	private int currentFreq = 500;
 	private double currentVolume = 0;
 	
-	private boolean hear_button_pressed = true;
 	
 	private Thread tone;
 	private int[] frequency = new int[7];
-	private double[] result = new double[7];
+	private double[] result_left = new double[7];
+	private double[] result_right = new double[7];
+	private double[] result = new double[14];
+	
+	private boolean left_done = false;
 	
 	private int freq_index = 0;
 	
@@ -129,6 +133,12 @@ public class HearingCheck extends Activity
 		      
 		      // ship our sample off to AudioTrack
 		      audioTrack.write(samples, 0, sampleLength);
+		      if(!left_done){
+		    	  audioTrack.setStereoVolume((float) currentVolume, 0);
+		      }
+		      else{
+		    	  audioTrack.setStereoVolume(0, (float) currentVolume);
+		      }
 		    
 		}
 		audioTrack.pause();
@@ -148,33 +158,53 @@ public class HearingCheck extends Activity
 			currentFreq = frequency[freq_index];
 			currentVolume = 0;
 			
-			final Thread tone = new Thread(new Runnable() {	
+			tone = new Thread(new Runnable() {	
 	            public void run()
 	            {
 	            	playTone(currentFreq);
-	          
+	            	
 	            }
 			});
 			tone.start();
-		
+			
+			
 			Timer timer = new Timer();
 			timer.schedule(new TimerTask() {
 				
 				@Override
 				public void run()
 				{
+					audioTrack.play();
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					audioTrack.pause();
 					
 					if(currentVolume < 1.0){
+						
 						currentVolume += 0.05;
+						
 					}
 					else{
-						hear_button_pressed = false;
-						canHear(view);
-						this.cancel();
+						
+						runOnUiThread(new Runnable(){
+
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								canHear(view);
+							}
+							
+						});
+					//	this.cancel();	
 					}
+					
 				}
 				
-			}, 0, 2000);
+			}, 0, 2000);	//2s for one frequency play sound
 			
 		}
 		else
@@ -185,19 +215,20 @@ public class HearingCheck extends Activity
 		}	
 	}
 	
+
+	
 	public void canHear(View view){
 		final Button b = (Button) findViewById(R.id.button2);
 		if(playing){
 			//tone = null;
-			if(hear_button_pressed)
-				result[freq_index] = average;
+		
+			if(!left_done)
+				result_left[freq_index] = average;
 			else
-				result[freq_index] = 0.0;
-			
+				result_right[freq_index] = average;
+	
 			playing = false;
 			finished = true;
-			b.setText("Wait");
-			
 			try {
 				//Thread.currentThread();
 				Thread.sleep(1000);
@@ -208,8 +239,26 @@ public class HearingCheck extends Activity
 			
 			freq_index++;
 			if(freq_index==frequency.length){
-				b.setText("Done!!!");
-				addResultToText();
+				
+				if(!left_done){
+					left_done = true;
+					freq_index = 0;
+					finished = false;
+					playing = false;
+					
+					playButtonPressed(view);
+				}
+				else{
+//					b.setText("Done!!!");
+					addResultToText();
+					
+					//send result to MicRepeater
+					Intent intent = new Intent(HearingCheck.this, MicRepeater.class);
+					intent.putExtra(EXTRA_TITLE, result);
+					startActivity(intent);
+					
+				}
+				
 			}else{
 				b.setText("I Can Hear");
 				finished = false;
@@ -249,8 +298,15 @@ public class HearingCheck extends Activity
 			}
 			
 			copy_data += user_name + "\t";
-			for(int i = 0; i< result.length; i++){
-				copy_data += result[i] + " ";
+			for(int i = 0; i< result_left.length; i++){
+				copy_data += result_left[i] + " ";
+				result[i] = result_left[i];				//add to result array
+			}
+			
+			copy_data = copy_data.trim() + "\t";
+			for(int i = 0; i< result_left.length; i++){
+				copy_data += result_right[i] + " ";
+				result[i+7] = result_right[i];			//add to result array
 			}
 			
 			fw = new FileWriter(list);
@@ -265,42 +321,7 @@ public class HearingCheck extends Activity
 		}
 		
 		
-	/*	
-		try {
-			fw = new FileWriter(list);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		try {
-			name_search = new Scanner(list);
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		String copy_data = "";
-		while(name_search.hasNext()){
-			String aLine = name_search.nextLine();
-			String[] line_data = aLine.split("\t");
-			
-			if(!user_name.equals(line_data[0])){
-				copy_data += aLine + "\n";
-			}
-		}
-		
-		copy_data += user_name + "\t";
-		for(int i = 0; i< result.length; i++){
-			copy_data += result[i] + " ";
-		}
-		try {
-			fw.write(copy_data);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		*/
+	
 	}
 
 }

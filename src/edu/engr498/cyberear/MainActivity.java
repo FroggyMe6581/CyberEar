@@ -14,8 +14,9 @@ import android.view.View;
 
 public class MainActivity extends Activity
 {
+	static final int PICK_CONTACT_REQUEST = 1;  // The request code
 	private String user_name = "No user selected.";
-
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
@@ -39,6 +40,19 @@ public class MainActivity extends Activity
 		user_name = getIntent().getStringExtra(SelectUserActivity.EXTRA_TITLE);
 	}
 	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+	    // Check which request we're responding to
+	    if (requestCode == PICK_CONTACT_REQUEST) {
+	        // Make sure the request was successful
+	        if (resultCode == RESULT_OK) {
+	            // The user picked a contact.
+	            // The Intent's data Uri identifies which contact was selected.
+
+	            // Do something with the contact here (bigger example below)
+	        }
+	    }
+	}
 	/************************************************************************************************************************
 	 * Callback for when "RUN" button is pressed.  Starts Activity specified by MicRepeater class.
 	 * 
@@ -60,7 +74,7 @@ public class MainActivity extends Activity
 	public void startHearingTestActivity(View view)
 	{
 		Intent intent = new Intent(this, SelectUserActivity.class);
-		startActivity(intent);
+		startActivityForResult(intent, PICK_CONTACT_REQUEST);
 	}
 
 }
