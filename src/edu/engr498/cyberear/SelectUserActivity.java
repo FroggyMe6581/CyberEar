@@ -26,14 +26,11 @@ import android.view.ViewGroup.LayoutParams;
 import android.view.ViewGroup.MarginLayoutParams;
 import android.widget.Button;
 import android.widget.EditText;
-<<<<<<< HEAD
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-=======
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
->>>>>>> origin/master
 
 public class SelectUserActivity extends Activity
 {
@@ -63,7 +60,6 @@ public class SelectUserActivity extends Activity
 				
 				if(userNameCheck(user_name))
 				{
-<<<<<<< HEAD
 					//to the mode-selection page
 					String[] user_data = getUserData(user_name);
 					if(user_data!=null){
@@ -88,7 +84,6 @@ public class SelectUserActivity extends Activity
 						intent.putExtra(EXTRA_TITLE, title);
 						startActivity(intent);
 					}
-=======
 					AlertDialog.Builder builder = new AlertDialog.Builder(SelectUserActivity.this);
 					builder.setMessage("Overwrite or Coninute to Hearing Aid")
 				       .setTitle("User exists")
@@ -134,7 +129,6 @@ public class SelectUserActivity extends Activity
 						
 					});
 					r1.addView(hearingCheck);
->>>>>>> origin/master
 					
 					Button hearingAid = new Button(getBaseContext());
 					RelativeLayout.LayoutParams params2 = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
