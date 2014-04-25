@@ -22,10 +22,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.view.Menu;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
-import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -52,8 +49,8 @@ public class HearingCheck extends Activity
 	
 	private boolean left_done = false;
 	
-	private boolean hear_button_pressed = true;
 	private int freq_index = 0;
+	
 	private String user_name;
 
 	@Override
@@ -61,6 +58,7 @@ public class HearingCheck extends Activity
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_hearing_check);
+		
 		Intent intent = getIntent();
 		user_name = intent.getStringExtra(SelectUserActivity.EXTRA_TITLE);
 		
@@ -76,35 +74,7 @@ public class HearingCheck extends Activity
 				 					 AudioFormat.ENCODING_PCM_16BIT, sampleLength*2, AudioTrack.MODE_STREAM);
 	}
 
-	/*
-	private synchronized void stopThread(Thread theThread)
-	{
-	    if (theThread != null)
-	    {
-	    	if(audioTrack!=null){
-		    	audioTrack.stop();
-	    		audioTrack.release();
-	    	}
-	    	tone = null;
-	    }
-	}
-	*/
 	@Override
-	protected void onDestroy(){
-		super.onDestroy();
-//		stopThread(tone);
-	}
-	@Override
-	protected void onPause(){
-		super.onPause();
-//		stopThread(tone);
-	}
-	@Override
-	protected void onStop(){
-		super.onStop();
-//		stopThread(tone);
-	}
-
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -115,6 +85,7 @@ public class HearingCheck extends Activity
 	public void playTone(double freq)
 	{
 		average = 0;
+
 		audioTrack.play(); 
 		short[] samples = new short[sampleLength];
 		
@@ -125,8 +96,12 @@ public class HearingCheck extends Activity
 		long avgSum = 0;
 		
 		
-	//	EditText freqInput = (EditText) findViewById(R.id.edit_freq);	
+	//	EditText freqInput = (EditText) findViewById(R.id.edit_freq);
+		
+		
+		
 	//	double freq = Double.valueOf(freqInput.getText().toString());
+		
 
 		while(!finished)
 		{
@@ -154,6 +129,8 @@ public class HearingCheck extends Activity
 		      avgSum = 0;
 		      // write root-mean-square average to textView
 		      
+		      
+		      
 		      // ship our sample off to AudioTrack
 		      audioTrack.write(samples, 0, sampleLength);
 		      if(!left_done){
@@ -172,7 +149,7 @@ public class HearingCheck extends Activity
 	public void playButtonPressed(final View view)
 	{
 		Button b = (Button) findViewById(R.id.button1);
-
+		
 		if(!playing)
 		{
 			b.setText("Stop Playback");
@@ -185,7 +162,6 @@ public class HearingCheck extends Activity
 	            public void run()
 	            {
 	            	playTone(currentFreq);
-	            	// from http://stackoverflow.com/questions/8505707/android-best-and-safe-way-to-stop-thread
 	            	
 	            }
 			});
@@ -242,10 +218,7 @@ public class HearingCheck extends Activity
 
 	
 	public void canHear(View view){
-		final RelativeLayout rl = (RelativeLayout) findViewById(R.id.rlHearingCheck);
-		final Button a = (Button) findViewById(R.id.button1);
 		final Button b = (Button) findViewById(R.id.button2);
-
 		if(playing){
 			//tone = null;
 		
@@ -260,6 +233,7 @@ public class HearingCheck extends Activity
 				//Thread.currentThread();
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
@@ -285,23 +259,6 @@ public class HearingCheck extends Activity
 					
 				}
 				
-				//rl.removeView(a);
-				a.setWidth(0);
-				a.setHeight(0);
-				RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-				params.addRule(RelativeLayout.CENTER_VERTICAL);
-				params.addRule(RelativeLayout.CENTER_HORIZONTAL);
-				b.setLayoutParams(params);				
-				b.setText("Done!!!");
-				b.setOnClickListener(new OnClickListener() {
-
-					@Override
-					public void onClick(View arg0) {
-						finish();
-					}
-					
-				});
-				addResultToText();
 			}else{
 				b.setText("I Can Hear");
 				finished = false;
@@ -327,7 +284,6 @@ public class HearingCheck extends Activity
 		Scanner name_search = null;
 		FileWriter fw = null;
 		String copy_data = "";
-		
 		
 		try {	//scanner exist
 			name_search = new Scanner(list);
