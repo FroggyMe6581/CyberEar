@@ -34,10 +34,11 @@
     <!-- from HearingCheck by Seung -->
     <string name="first_screen">First Screen</string>
     <string name="start_button">Start</string>
-    <string name="enter_name">Enter Name</string>
+    <string name="enter_name">New User Enter Name</string>
     <string name="hearing_check">Hearing Check</string>
     <string name="start_test">Start Test</string>
     <string name="can_hear">I Can Hear</string>
     <string name="title_activity_hearing_check">Hearing Check</string>
+    <string name="select_name">Select Name</string>
 
 </resources>
