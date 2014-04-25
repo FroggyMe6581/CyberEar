@@ -22,6 +22,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.view.Menu;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 import android.widget.RelativeLayout;
@@ -41,7 +42,6 @@ public class HearingCheck extends Activity
 	private double volume = 0;
 	private int currentFreq = 500;
 	private double currentVolume = 0;
-<<<<<<< HEAD
 	
 	
 	private Thread tone;
@@ -52,12 +52,7 @@ public class HearingCheck extends Activity
 	
 	private boolean left_done = false;
 	
-=======
 	private boolean hear_button_pressed = true;
-	private Thread tone;
-	private int[] frequency = new int[7];
-	private double[] result = new double[7];
->>>>>>> origin/master
 	private int freq_index = 0;
 	private String user_name;
 
@@ -96,15 +91,17 @@ public class HearingCheck extends Activity
 	*/
 	@Override
 	protected void onDestroy(){
+		super.onDestroy();
 //		stopThread(tone);
-//		super.onDestroy();
 	}
 	@Override
 	protected void onPause(){
+		super.onPause();
 //		stopThread(tone);
 	}
 	@Override
 	protected void onStop(){
+		super.onStop();
 //		stopThread(tone);
 	}
 
@@ -188,10 +185,7 @@ public class HearingCheck extends Activity
 	            public void run()
 	            {
 	            	playTone(currentFreq);
-<<<<<<< HEAD
-=======
 	            	// from http://stackoverflow.com/questions/8505707/android-best-and-safe-way-to-stop-thread
->>>>>>> origin/master
 	            	
 	            }
 			});
@@ -204,7 +198,6 @@ public class HearingCheck extends Activity
 				@Override
 				public void run()
 				{
-<<<<<<< HEAD
 					audioTrack.play();
 					try {
 						Thread.sleep(500);
@@ -214,8 +207,6 @@ public class HearingCheck extends Activity
 					}
 					audioTrack.pause();
 					
-=======
->>>>>>> origin/master
 					if(currentVolume < 1.0){
 						
 						currentVolume += 0.05;
@@ -274,7 +265,6 @@ public class HearingCheck extends Activity
 			
 			freq_index++;
 			if(freq_index==frequency.length){
-<<<<<<< HEAD
 				
 				if(!left_done){
 					left_done = true;
@@ -295,15 +285,23 @@ public class HearingCheck extends Activity
 					
 				}
 				
-=======
-				rl.removeView(a);
+				//rl.removeView(a);
+				a.setWidth(0);
+				a.setHeight(0);
 				RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 				params.addRule(RelativeLayout.CENTER_VERTICAL);
 				params.addRule(RelativeLayout.CENTER_HORIZONTAL);
 				b.setLayoutParams(params);				
 				b.setText("Done!!!");
+				b.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						finish();
+					}
+					
+				});
 				addResultToText();
->>>>>>> origin/master
 			}else{
 				b.setText("I Can Hear");
 				finished = false;

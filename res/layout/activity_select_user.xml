@@ -1,15 +1,12 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-<<<<<<< HEAD
     xmlns:android1="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:fillViewport="true" >
 
 <RelativeLayout 
-=======
     android:id="@+id/rlSelectUser"
->>>>>>> origin/master
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="#00F"
