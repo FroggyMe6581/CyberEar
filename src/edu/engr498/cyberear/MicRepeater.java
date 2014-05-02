@@ -15,9 +15,11 @@ import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.media.audiofx.AcousticEchoCanceler;
+import android.media.audiofx.AutomaticGainControl;
 import android.media.audiofx.NoiseSuppressor;
 import android.os.Build;
 import android.os.Bundle;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.view.Menu;
@@ -44,7 +46,7 @@ public class MicRepeater extends Activity
 	private int sampleRate = 44100;
 	private int trackLength = 0; //2048;		// default length of sample array to work with: ~0.05s.  Lengthened by minSize if nec'ary.
 	private int minSize;						// minimum size of trackLength necessary; trackLength is lengthened to this if nec'ary.
-	private int bufferSize = 512;				// size of buffer when reading from AudioRecord and writing to AudioTrack
+	private int bufferSize = 128; //512;		// size of buffer when reading from AudioRecord and writing to AudioTrack
 	private double average = 0;					// RMS average of signal being sent to AudioTrack
 	private int maxVol;
 	
@@ -61,6 +63,8 @@ public class MicRepeater extends Activity
 	private long period = (long) ( 250 );		// how often to update display, ie the volume bar location and numbers: 250ms
 	
 	private int countdown = 4;					//auto pressing button - empirically found start up procedure to clear buffers and run smoothly
+	
+	private Equalizer EQ;						//will be two when in stereo
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -175,6 +179,13 @@ public class MicRepeater extends Activity
 			}
 		}, 0, period);
 		
+	}
+	
+	@Override
+	protected void onResume()
+	{
+		super.onResume();
+		
 		if((minSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT)) > trackLength)
 			trackLength = minSize;
 		
@@ -204,11 +215,14 @@ public class MicRepeater extends Activity
 			audioTrack = new AudioTrack( AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
 					 AudioFormat.ENCODING_PCM_16BIT, trackLength, AudioTrack.MODE_STREAM);
 		
-		//if(AcousticEchoCanceler.isAvailable())
-		//	AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
+		if(Build.VERSION.SDK_INT >= 16)
+			addAcousticEchoCanceler();
 		
-		//if(NoiseSuppressor.isAvailable())
-		//	NoiseSuppressor.create(audioRecord.getAudioSessionId());
+		if(Build.VERSION.SDK_INT >= 16)
+			addNoiseSuppressor();
+		
+		if(Build.VERSION.SDK_INT >= 16)
+			addAutoGainControl();
 	}
 
 	@Override
@@ -229,48 +243,152 @@ public class MicRepeater extends Activity
 			playing = false;
 			finished = true;
 		}
+		countdown = 4;
 		
 		audioRecord.release();
+	}
+	
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	public void addNoiseSuppressor()
+	{
+		if(NoiseSuppressor.isAvailable())
+			NoiseSuppressor.create(audioRecord.getAudioSessionId());
+	}
+	
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	public void addAcousticEchoCanceler()
+	{
+		if(AcousticEchoCanceler.isAvailable())
+			AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
+	}
+	
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	public void addAutoGainControl()
+	{
+		if(AutomaticGainControl.isAvailable())
+			AutomaticGainControl.create(audioRecord.getAudioSessionId());
 	}
 	
 	public void playTone()
 	{
 		bufferSize = 128;
 		
-		if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
-			bufferSize = this.trackLength;			//tried a shorter bufferSize, like 512 and 256, yet making it the same was best.
+		//if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
+		//	bufferSize = this.trackLength;			//with a short[], this adds a LOT of latency, so eventually delete these commented lines!
 		
-		byte[] samples = new byte[bufferSize];
+		EQ = new Equalizer(bufferSize, 2, 4, 2, 2, 2, 0.1, 0.1);
+		//Equalizer safeEarsEQ = new Equalizer(bufferSize, 1, 1, 1, 1, 0.1, 0.01, 0.01);
+		
+		short[] samples = new short[bufferSize];		//better latency if a byte[], but short[] gives better RMS response
+		short[] eqSamples; // = new short[bufferSize];
 		int samplesRead;
 		
 		average = 0;
 		short sampleShort = 0;
 		long avgSum = 0;
-		short zero = 0;
 
 		audioRecord.startRecording();
 		audioTrack.play();
 		
+		int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+		int volumeGradient;
+		int j;
+		int smoothDist;
+		int counter = 0;
 		
 		while(!finished)
 		{
 			  android.os.Process.setThreadPriority(-19);
 			  samplesRead = audioRecord.read(samples, 0, bufferSize);
-		      // fill samples array
+			  
+			  eqSamples = EQ.equalize(samples);
+			  
+			  /*
+			  if(counter > 0)
+		      {
+		    	  eqSamples = safeEarsEQ.equalize(samples);
+		    	  counter--;
+		      }
+			  else
+			  {
+				  eqSamples = EQ.equalize(samples);
+			  }
+			  */
+			  
+			  
+			  //currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+			  // Impulse protection
+			  // & collect RMS average
 		      for( int i = 0; i < samplesRead; i++ )
 		      {
+		    	  /*
+		    	  if(currentVolume >= maxVol-1)
+		    	  {
+		    		  if(eqSamples[i] > 6000)
+		    		  {
+		    			  volumeGradient = eqSamples[i] - 6000;
+		    			  eqSamples[i] = 6000;
+		    			  smoothDist = 50;
+		    			  if(i+smoothDist > eqSamples.length)
+		    				  smoothDist = eqSamples.length - (i+1);
+		    			  for(j = 1; j < smoothDist; j++)
+		    				  eqSamples[i+j] -= volumeGradient;
+		    		  }
+		    		  if(eqSamples[i] < -6000)
+		    		  {
+		    			  volumeGradient = eqSamples[i] + 6000;
+		    			  eqSamples[i] = -6000;
+		    			  smoothDist = 50;
+		    			  if(i+smoothDist > eqSamples.length)
+		    				  smoothDist = eqSamples.length - (i+1);
+		    			  for(j = 1; j < smoothDist; j++)
+		    				  eqSamples[i+j] -= volumeGradient;
+		    		  }
+		    	  }
+		    	  else if(currentVolume >= maxVol-3)
+		    	  {
+		    		  if(eqSamples[i] > 9000)
+			    		  eqSamples[i] = 9000;
+			    	  
+			    	  if(eqSamples[i] < -9000)
+			    		  eqSamples[i] = -9000;
+		    	  }
+		    	  else if(currentVolume >= maxVol-6)
+		    	  {
+		    		  if(eqSamples[i] > 16383)
+			    		  eqSamples[i] = 16383;
+			    	  
+			    	  if(eqSamples[i] < -16384)
+			    		  eqSamples[i] = -16384;
+		    	  }
+		    	  */
+		    	  
 		          // sampleShort is only a fraction of maximum short (32767), as scaled by -1 to 1 sine wave * 0 to 1 amplitude
-		          sampleShort = (short)(0x000000FF & (int)samples[i]);
+		    	  sampleShort = eqSamples[i];
 		          avgSum += ((long)sampleShort)*((long)sampleShort);
 		      }
 		      average = Math.sqrt( ((double)avgSum)/((double)samplesRead) );
 		      avgSum = 0;
 		      // write root-mean-square average to textView
+		      if(average > 15000)
+		      {
+		    	  currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+		    	  counter = 2;
+		    	  int newVolume = currentVolume - 5;
+		    	  if(newVolume < 0)
+		    		  newVolume = 1;
+		    	  audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0);
+		    	  //eqSamples = safeEarsEQ.equalize(eqSamples);
+		      }
+		      if(counter > 0)
+		      {
+		    	  counter--;
+		    	  if(counter == 0)
+		    		  audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume, 0);
+		      }
 		      
 		      
-		      
-		      // ship our sample off to AudioTrack
-		      audioTrack.write(samples, 0, samplesRead);
+		      audioTrack.write(eqSamples, 0, samplesRead);
 		}
 		audioTrack.pause();
 		audioTrack.flush();
@@ -304,7 +422,7 @@ public class MicRepeater extends Activity
 				{
 					--countdown;
 					try{
-					Thread.sleep(500);
+					Thread.sleep(750);
 					} catch (InterruptedException e) { }
 					playButtonPressed((View)findViewById(R.id.mrlayout));
 				}
@@ -320,7 +438,7 @@ public class MicRepeater extends Activity
 				{
 					--countdown;
 					try{
-					Thread.sleep(500);
+					Thread.sleep(1000);
 					} catch (InterruptedException e) { }
 					playButtonPressed((View)findViewById(R.id.mrlayout));
 					return;														//very important for recursion to work properly!!!
