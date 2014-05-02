@@ -6,7 +6,7 @@ package edu.engr498.cyberear;
 
 public class Filter
 {
-	private int bufferSize;
+	//private int bufferSize;
 	
 	private int freq;
 	private double k;
@@ -16,15 +16,15 @@ public class Filter
 	
 	private double b0xK, b1xK, b2xK;
 	
-	private byte prev_ym1 = 0;
-	private byte prev_ym2 = 0;
+	private short prev_ym1 = 0;
+	private short prev_ym2 = 0;
 	
-	private byte prev_xm1 = 0;
-	private byte prev_xm2 = 0;
+	private short prev_xm1 = 0;
+	private short prev_xm2 = 0;
 	
 	public Filter(int bufferSize, int freq, double k, double a1, double a2, double b0, double b1, double b2)
 	{
-		this.bufferSize = bufferSize;
+		//this.bufferSize = bufferSize;
 		
 		this.freq = freq;
 		this.k = k;
@@ -42,18 +42,19 @@ public class Filter
 		b2xK = b2*k;
 	}
 	
-	public byte[] filter(byte[] x)
+	public short[] filter(short[] x)
 	{
-		byte[] y = new byte[bufferSize];
+		int bufferSize = x.length;
+		short[] y = new short[bufferSize];
 		
 		//n = 0
-		y[0] = (byte)(b0xK*(double)x[0] + b1xK*(double)prev_xm1 + b2xK*(double)prev_xm2 - a1*(double)prev_ym1 - a2*(double)prev_ym2);
+		y[0] = (short)(b0xK*(double)(x[0]) + b1xK*(double)prev_xm1 + b2xK*(double)prev_xm2 - a1*(double)prev_ym1 - a2*(double)prev_ym2);
 		//n = 1
-		y[1] = (byte)(b0xK*(double)x[1] + b1xK*(double)x[0] + b2xK*(double)prev_xm1 - a1*(double)y[0] - a2*(double)prev_ym1);
+		y[1] = (short)(b0xK*(double)(x[1]) + b1xK*(double)(x[0]) + b2xK*(double)prev_xm1 - a1*(double)y[0] - a2*(double)prev_ym1);
 		
 		
 		for(int n = 2; n < bufferSize; n++)
-			y[n] = (byte)(b0xK*(double)x[n] + b1xK*(double)x[n-1] + b2xK*(double)x[n-2] - a1*(double)y[n-1] - a2*(double)y[n-2]);
+			y[n] = (short)(b0xK*(double)(x[n]) + b1xK*(double)(x[n-1]) + b2xK*(double)(x[n-2]) - a1*(double)y[n-1] - a2*(double)y[n-2]);
 		
 		
 		prev_xm1 = x[bufferSize-1];

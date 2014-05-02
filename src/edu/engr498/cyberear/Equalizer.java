@@ -23,21 +23,21 @@ public class Equalizer
 		f_8000 = new Filter(bufferSize, 8000, k_8000, -0.8560, 0.3042, 0.5400, -1.0801, 0.5400);
 	}
 	
-	public byte[] equalize(byte[] x)
+	public short[] equalize(short[] x)
 	{
-		//byte[] y = new byte[bufferSize];
+		short[] y = new short[x.length];
 		
-		byte[] y_125  = f_125.filter(x);
-		byte[] y_250  = f_250.filter(x);
-		byte[] y_500  = f_500.filter(x);
-		byte[] y_1000 = f_1000.filter(x);
-		byte[] y_2000 = f_2000.filter(x);
-		byte[] y_4000 = f_4000.filter(x);
-		byte[] y_8000 = f_8000.filter(x);
+		short[] y_125  = f_125.filter(x);
+		short[] y_250  = f_250.filter(x);
+		short[] y_500  = f_500.filter(x);
+		short[] y_1000 = f_1000.filter(x);
+		short[] y_2000 = f_2000.filter(x);
+		short[] y_4000 = f_4000.filter(x);
+		short[] y_8000 = f_8000.filter(x);
 		
-		for(int n = 0; n < bufferSize; n++)
-			x[n] = (byte) (y_125[n] + y_250[n] + y_500[n] + y_1000[n] + y_2000[n] + y_4000[n] + y_8000[n]);
+		for(int n = 0; n < x.length; n++)
+			y[n] = (short) (y_125[n] + y_250[n] + y_500[n] + y_1000[n] + y_2000[n] + y_4000[n] + y_8000[n]);
 		
-		return x;
+		return y;
 	}
 }
