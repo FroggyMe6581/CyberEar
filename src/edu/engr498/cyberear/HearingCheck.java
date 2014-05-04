@@ -5,8 +5,6 @@
 package edu.engr498.cyberear;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
@@ -19,39 +17,52 @@ import android.media.AudioTrack;
 import android.os.Bundle;
 import android.os.Environment;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
-import android.widget.SeekBar;
-import android.widget.TextView;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 public class HearingCheck extends Activity
 {
 	public final static String EXTRA_TITLE = "com.example.hat_demo_1.TITLE";
 	private AudioTrack audioTrack;
+	private AudioManager audioManager;
 	private boolean finished = false;
-	private boolean playing = false;
 	private int sampleRate = 44100;
 	private int sampleLength = 4096;
 	private int minSize;
 	private double average = 0;
 	private double volume = 0;
-	private int currentFreq = 500;
 	private double currentVolume = 0;
 	
-	
+	private ImageView iv;
 	private Thread tone;
 	private int[] frequency = new int[7];
 	private double[] result_left = new double[7];
 	private double[] result_right = new double[7];
 	private double[] result = new double[14];
 	
+	private int[] volume_left = new int[7];
+	private int[] volume_right = new int[7];
+	private int[] volume_result = new int[14];
+	
+	private double[] db_left = new double[7];
+	private double[] db_right = new double[7];
+	private double[] db_result = new double[14];
+	
 	private boolean left_done = false;
 	
 	private int freq_index = 0;
 	
 	private String user_name;
+	
+	private ProgressBar pb;
+	private final int one_progress = 100/14;
+	
+	private Button quit_button;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -62,16 +73,41 @@ public class HearingCheck extends Activity
 		Intent intent = getIntent();
 		user_name = intent.getStringExtra(SelectUserActivity.EXTRA_TITLE);
 		
+		//initialize progress bar
+		pb = (ProgressBar) findViewById(R.id.progressBar1);
+		pb.setProgress(0);
+		
 		for(int i = 0; i<frequency.length; i++)
 		{
 			frequency[i] = 125*(int)Math.pow(2,i);
 		}
 		
+		setVolumeControlStream(AudioManager.STREAM_MUSIC);
+		audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+		audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 
+				audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)-4, 0);	
+		
 		if ((minSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT)) > sampleLength)
 			sampleLength = minSize;
-		
 		audioTrack = new AudioTrack( AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
-				 					 AudioFormat.ENCODING_PCM_16BIT, sampleLength*2, AudioTrack.MODE_STREAM);
+				 AudioFormat.ENCODING_PCM_16BIT, sampleLength*2, AudioTrack.MODE_STREAM);
+
+		iv = (ImageView) findViewById(R.id.imageView1);
+		
+		playButtonPressed(this.getCurrentFocus());
+		
+		quit_button = (Button) findViewById(R.id.button1);
+		quit_button.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				finished = true;
+				Intent intent = new Intent(HearingCheck.this, MainActivity.class);
+				startActivity(intent);
+			}
+		});
+		
 	}
 
 	@Override
@@ -82,7 +118,7 @@ public class HearingCheck extends Activity
 		return true;
 	}
 	
-	public void playTone(double freq)
+	public void playTone()
 	{
 		average = 0;
 
@@ -92,15 +128,8 @@ public class HearingCheck extends Activity
 		double angle = 0;
 		double sample = 0;
 		short sampleShort = 0;
-		//int avgDivisor = 0;
+		
 		long avgSum = 0;
-		
-		
-	//	EditText freqInput = (EditText) findViewById(R.id.edit_freq);
-		
-		
-		
-	//	double freq = Double.valueOf(freqInput.getText().toString());
 		
 
 		while(!finished)
@@ -108,6 +137,7 @@ public class HearingCheck extends Activity
 		//	  volume = ( (double)volumeControl.getProgress() )/1000.0;
 		      // fill samples array
 			  volume = currentVolume;
+			  double freq = frequency[freq_index];
 		      for( int i = 0; i < sampleLength; i++ )
 		      {
 		    	  //avgDivisor++;
@@ -148,40 +178,35 @@ public class HearingCheck extends Activity
 	
 	public void playButtonPressed(final View view)
 	{
-		Button b = (Button) findViewById(R.id.button1);
-		
-		if(!playing)
-		{
-			b.setText("Stop Playback");
-			playing = true;
-			
-			currentFreq = frequency[freq_index];
-			currentVolume = 0;
-			
 			tone = new Thread(new Runnable() {	
 	            public void run()
 	            {
-	            	playTone(currentFreq);
+	            	playTone();
 	            	
 	            }
 			});
 			tone.start();
-			
 			
 			Timer timer = new Timer();
 			timer.schedule(new TimerTask() {
 				
 				@Override
 				public void run()
-				{
+				{			
+					
 					audioTrack.play();
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					audioTrack.pause();
+					Timer tt = new Timer();
+					tt.schedule(new TimerTask(){
+
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							audioTrack.pause();
+							
+						}
+						
+					}, 500);	
+					
 					
 					if(currentVolume < 1.0){
 						
@@ -190,82 +215,65 @@ public class HearingCheck extends Activity
 					}
 					else{
 						
-						runOnUiThread(new Runnable(){
-
+						runOnUiThread(new Runnable(){			
 							@Override
 							public void run() {
 								// TODO Auto-generated method stub
+								
 								canHear(view);
 							}
-							
 						});
-					//	this.cancel();	
+						currentVolume = 0;
 					}
 					
 				}
 				
-			}, 0, 2000);	//2s for one frequency play sound
-			
-		}
-		else
-		{
-			playing = false;
-			finished = true;
-			b.setText("Start Playback");
-		}	
+			}, 0,2000);	//2s for one frequency play sound
+	
 	}
 	
-
 	
 	public void canHear(View view){
-		final Button b = (Button) findViewById(R.id.button2);
-		if(playing){
-			//tone = null;
 		
-			if(!left_done)
+			int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+			currentVolume = 0;
+		
+			if(!left_done){
 				result_left[freq_index] = average;
-			else
+				volume_left[freq_index] = vol;
+				db_left[freq_index] = LookUpTable.getDb(vol, average);
+			}
+			else{
 				result_right[freq_index] = average;
-	
-			playing = false;
-			finished = true;
-			try {
-				//Thread.currentThread();
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				volume_right[freq_index] = vol;
+				db_right[freq_index] = LookUpTable.getDb(vol, average);
+			}
+			pb.setProgress(pb.getProgress()+one_progress);
+			if(!left_done){
+				left_done = true;
+				iv.setBackgroundResource(R.drawable.right_sound);
+			}
+			else{
+				left_done = false;
+				iv.setBackgroundResource(R.drawable.left_sound);
+				freq_index++;
+				
 			}
 			
-			freq_index++;
 			if(freq_index==frequency.length){
 				
-				if(!left_done){
-					left_done = true;
-					freq_index = 0;
-					finished = false;
-					playing = false;
-					
-					playButtonPressed(view);
-				}
-				else{
-//					b.setText("Done!!!");
+				pb.setProgress(pb.getProgress()+one_progress);
+					freq_index =0;
 					addResultToText();
 					
+					finished = true;
+	
 					//send result to MicRepeater
 					Intent intent = new Intent(HearingCheck.this, MicRepeater.class);
 					intent.putExtra(EXTRA_TITLE, result);
 					startActivity(intent);
 					
-				}
-				
-			}else{
-				b.setText("I Can Hear");
-				finished = false;
-				playButtonPressed(view);
-			}
-			
-		}	
+			}	
 		
 	}
 	
@@ -299,14 +307,22 @@ public class HearingCheck extends Activity
 			
 			copy_data += user_name + "\t";
 			for(int i = 0; i< result_left.length; i++){
-				copy_data += result_left[i] + " ";
+				//copy_data += result_left[i] + " ";
+				//copy_data += volume_left[i] + " ";
+				copy_data += db_left[i] + " ";
 				result[i] = result_left[i];				//add to result array
+				volume_result[i] = volume_left[i];	//add volume to volume_result
+				db_result[i] = db_left[i];
 			}
 			
 			copy_data = copy_data.trim() + "\t";
 			for(int i = 0; i< result_left.length; i++){
-				copy_data += result_right[i] + " ";
+				//copy_data += result_right[i] + " ";
+				//copy_data += volume_right[i] + " ";
+				copy_data += db_right[i] + " ";
 				result[i+7] = result_right[i];			//add to result array
+				volume_result[i+7] = volume_right[i];	//add volume to volume_result
+				db_result[i+7] = db_right[i];
 			}
 			
 			fw = new FileWriter(list);

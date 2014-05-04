@@ -5,13 +5,11 @@
 package edu.engr498.cyberear;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import android.R.color;
 import android.os.Bundle;
 import android.os.Environment;
 import android.app.Activity;
@@ -21,15 +19,10 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.view.Menu;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.ViewGroup.LayoutParams;
-import android.view.ViewGroup.MarginLayoutParams;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
 public class SelectUserActivity extends Activity
@@ -159,7 +152,7 @@ public class SelectUserActivity extends Activity
 		
 		data = getNameList();
 		final Button start2 = (Button) findViewById(R.id.button2);
-		if(data!=null){
+		if(data!=null&&getNameList().size()>0){
 			final RadioGroup names = (RadioGroup) findViewById(R.id.radioGroup1);
 			RadioButton[] rb = new RadioButton[data.size()];
 			for(int i=0; i<rb.length; i++){
