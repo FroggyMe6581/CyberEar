@@ -40,5 +40,7 @@
     <string name="can_hear">I Can Hear</string>
     <string name="title_activity_hearing_check">Hearing Check</string>
     <string name="select_name">Select Name</string>
+    <string name="progress">Progress</string>
+    <string name="abort">Quit Checking</string>
 
 </resources>

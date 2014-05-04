@@ -1,6 +1,5 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/rlHearingCheck"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingBottom="@dimen/activity_vertical_margin"
@@ -17,34 +16,52 @@
         android:textColor="#FFF"
         android:text="@string/hearing_check" />
 
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/textView1"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/textView1"
+        android:layout_marginTop="32dp"
+        android:background="@drawable/left_sound" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/imageView1"
+        android:layout_below="@+id/imageView1"
+        android:layout_marginTop="14dp"
+        android:text="@string/progress"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
     <ProgressBar
         android:id="@+id/progressBar1"
-        style="?android:attr/progressBarStyleLarge"
+        style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textView1"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="81dp" />
-
-    <Button
-        android:id="@+id/button1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:textColor="#000"
-        android:onClick="playButtonPressed"
-        android:text="@string/start_test" />
+        android:layout_alignLeft="@+id/textView2"
+        android:layout_alignRight="@+id/imageView1"
+        android:layout_below="@+id/textView2" />
 
     <Button
         android:id="@+id/button2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/button1"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="21dp"
-        android:textColor="#000"
+        android:layout_alignLeft="@+id/progressBar1"
+        android:layout_alignParentBottom="true"
+        android:layout_alignRight="@+id/progressBar1"
+        android:layout_marginBottom="15dp"
+        android:onClick="canHear"
         android:text="@string/can_hear"
-        android:onClick="canHear" />
+        android:textColor="#000" />
+
+    <Button
+        android:id="@+id/button1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@+id/imageView1"
+        android:text="@string/abort" />
 
 </RelativeLayout>
