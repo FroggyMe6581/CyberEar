@@ -63,7 +63,9 @@ public class HearingCheck extends Activity
 	private final int one_progress = 100/14;
 	
 	private Button quit_button;
-
+	private boolean can_hear_pressed = false;
+	
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
@@ -84,8 +86,13 @@ public class HearingCheck extends Activity
 		
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+		int init_volume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)-7;
+
+		if(init_volume<=0) 
+			init_volume = 1;
+		
 		audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 
-				audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)-4, 0);	
+				init_volume, 0);	
 		
 		if ((minSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT)) > sampleLength)
 			sampleLength = minSize;
@@ -103,6 +110,8 @@ public class HearingCheck extends Activity
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
 				finished = true;
+				left_done = false;
+				freq_index = 0;
 				Intent intent = new Intent(HearingCheck.this, MainActivity.class);
 				startActivity(intent);
 			}
@@ -136,6 +145,7 @@ public class HearingCheck extends Activity
 		{
 		//	  volume = ( (double)volumeControl.getProgress() )/1000.0;
 		      // fill samples array
+			
 			  volume = currentVolume;
 			  double freq = frequency[freq_index];
 		      for( int i = 0; i < sampleLength; i++ )
@@ -163,13 +173,19 @@ public class HearingCheck extends Activity
 		      
 		      // ship our sample off to AudioTrack
 		      audioTrack.write(samples, 0, sampleLength);
-		      if(!left_done){
-		    	  audioTrack.setStereoVolume((float) currentVolume, 0);
+		      
+		      while(can_hear_pressed){
+		    	  audioTrack.setStereoVolume(0, 0);
 		      }
-		      else{
-		    	  audioTrack.setStereoVolume(0, (float) currentVolume);
-		      }
-		    
+		      	if(!left_done){
+		    	
+		      		audioTrack.setStereoVolume(1.0f, 0);
+		      	}
+		      	else{
+		    	
+		      		audioTrack.setStereoVolume(0, 1.0f);
+		      	}
+		     
 		}
 		audioTrack.pause();
 		audioTrack.flush();
@@ -193,8 +209,9 @@ public class HearingCheck extends Activity
 				@Override
 				public void run()
 				{			
-					
+					audioTrack.flush();
 					audioTrack.play();
+					
 					Timer tt = new Timer();
 					tt.schedule(new TimerTask(){
 
@@ -226,18 +243,19 @@ public class HearingCheck extends Activity
 						currentVolume = 0;
 					}
 					
-				}
-				
+					if(can_hear_pressed)
+						can_hear_pressed = false;
+				}	
 			}, 0,2000);	//2s for one frequency play sound
-	
+		
 	}
 	
 	
 	public void canHear(View view){
-		
+			can_hear_pressed = true;
 			int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 			currentVolume = 0;
-		
+			
 			if(!left_done){
 				result_left[freq_index] = average;
 				volume_left[freq_index] = vol;
@@ -249,11 +267,16 @@ public class HearingCheck extends Activity
 				db_right[freq_index] = LookUpTable.getDb(vol, average);
 			}
 			pb.setProgress(pb.getProgress()+one_progress);
+		
+			
 			if(!left_done){
+				
 				left_done = true;
 				iv.setBackgroundResource(R.drawable.right_sound);
+				
 			}
 			else{
+				
 				left_done = false;
 				iv.setBackgroundResource(R.drawable.left_sound);
 				freq_index++;
@@ -270,11 +293,11 @@ public class HearingCheck extends Activity
 	
 					//send result to MicRepeater
 					Intent intent = new Intent(HearingCheck.this, MicRepeater.class);
-					intent.putExtra(EXTRA_TITLE, result);
+					intent.putExtra(EXTRA_TITLE, db_result);
 					startActivity(intent);
 					
 			}	
-		
+			
 	}
 	
 	public void addResultToText(){

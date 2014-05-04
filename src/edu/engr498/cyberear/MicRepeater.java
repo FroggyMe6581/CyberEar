@@ -64,7 +64,8 @@ public class MicRepeater extends Activity
 	
 	private int countdown = 4;					//auto pressing button - empirically found start up procedure to clear buffers and run smoothly
 	
-	private Equalizer EQ;						//will be two when in stereo
+	private Equalizer EQL;						//EQ Left
+	private Equalizer EQR;						//EQ Right
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -186,10 +187,10 @@ public class MicRepeater extends Activity
 	{
 		super.onResume();
 		
-		if((minSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT)) > trackLength)
+		if((minSize = AudioRecord.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT)) > trackLength)
 			trackLength = minSize;
 		
-		if((minSize = AudioRecord.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT)) > trackLength)
+		if((minSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_STEREO,AudioFormat.ENCODING_PCM_16BIT)) > trackLength)
 			trackLength = minSize;
 		
 		if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -209,10 +210,10 @@ public class MicRepeater extends Activity
 		}
 		
 		if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
-			audioTrack = new AudioTrack( AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
+			audioTrack = new AudioTrack( AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_STEREO,
 				 					 AudioFormat.ENCODING_PCM_16BIT, trackLength*2, AudioTrack.MODE_STREAM);
 		else
-			audioTrack = new AudioTrack( AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
+			audioTrack = new AudioTrack( AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_STEREO,
 					 AudioFormat.ENCODING_PCM_16BIT, trackLength, AudioTrack.MODE_STREAM);
 		
 		if(Build.VERSION.SDK_INT >= 16)
@@ -276,11 +277,14 @@ public class MicRepeater extends Activity
 		//if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
 		//	bufferSize = this.trackLength;			//with a short[], this adds a LOT of latency, so eventually delete these commented lines!
 		
-		EQ = new Equalizer(bufferSize, 2, 4, 2, 2, 2, 0.1, 0.1);
+		EQL = new Equalizer(bufferSize, 2, 4, 2, 2, 2, 0.1, 0.1);
+		EQR = new Equalizer(bufferSize, 2, 4, 2, 2, 2, 0.1, 0.1);
 		//Equalizer safeEarsEQ = new Equalizer(bufferSize, 1, 1, 1, 1, 0.1, 0.01, 0.01);
 		
 		short[] samples = new short[bufferSize];		//better latency if a byte[], but short[] gives better RMS response
-		short[] eqSamples; // = new short[bufferSize];
+		short[] samplesStereo = new short[2*bufferSize];
+		short[] eqSamplesLeft; // = new short[bufferSize];
+		short[] eqSamplesRight;
 		int samplesRead;
 		
 		average = 0;
@@ -301,7 +305,8 @@ public class MicRepeater extends Activity
 			  android.os.Process.setThreadPriority(-19);
 			  samplesRead = audioRecord.read(samples, 0, bufferSize);
 			  
-			  eqSamples = EQ.equalize(samples);
+			  eqSamplesLeft = EQL.equalize(samples);
+			  eqSamplesRight = EQR.equalize(samples);
 			  
 			  /*
 			  if(counter > 0)
@@ -322,30 +327,7 @@ public class MicRepeater extends Activity
 		      for( int i = 0; i < samplesRead; i++ )
 		      {
 		    	  /*
-		    	  if(currentVolume >= maxVol-1)
-		    	  {
-		    		  if(eqSamples[i] > 6000)
-		    		  {
-		    			  volumeGradient = eqSamples[i] - 6000;
-		    			  eqSamples[i] = 6000;
-		    			  smoothDist = 50;
-		    			  if(i+smoothDist > eqSamples.length)
-		    				  smoothDist = eqSamples.length - (i+1);
-		    			  for(j = 1; j < smoothDist; j++)
-		    				  eqSamples[i+j] -= volumeGradient;
-		    		  }
-		    		  if(eqSamples[i] < -6000)
-		    		  {
-		    			  volumeGradient = eqSamples[i] + 6000;
-		    			  eqSamples[i] = -6000;
-		    			  smoothDist = 50;
-		    			  if(i+smoothDist > eqSamples.length)
-		    				  smoothDist = eqSamples.length - (i+1);
-		    			  for(j = 1; j < smoothDist; j++)
-		    				  eqSamples[i+j] -= volumeGradient;
-		    		  }
-		    	  }
-		    	  else if(currentVolume >= maxVol-3)
+		    	  if(currentVolume >= maxVol-3)
 		    	  {
 		    		  if(eqSamples[i] > 9000)
 			    		  eqSamples[i] = 9000;
@@ -363,8 +345,11 @@ public class MicRepeater extends Activity
 		    	  }
 		    	  */
 		    	  
+		    	  samplesStereo[2*i] = eqSamplesLeft[i];
+		    	  samplesStereo[2*i + 1] = eqSamplesRight[i];
+		    	  
 		          // sampleShort is only a fraction of maximum short (32767), as scaled by -1 to 1 sine wave * 0 to 1 amplitude
-		    	  sampleShort = eqSamples[i];
+		    	  sampleShort = (short)(((long)eqSamplesLeft[i] + (long)eqSamplesRight[i])/2);
 		          avgSum += ((long)sampleShort)*((long)sampleShort);
 		      }
 		      average = Math.sqrt( ((double)avgSum)/((double)samplesRead) );
@@ -388,7 +373,7 @@ public class MicRepeater extends Activity
 		      }
 		      
 		      
-		      audioTrack.write(eqSamples, 0, samplesRead);
+		      audioTrack.write(samplesStereo, 0, 2*samplesRead);
 		}
 		audioTrack.pause();
 		audioTrack.flush();

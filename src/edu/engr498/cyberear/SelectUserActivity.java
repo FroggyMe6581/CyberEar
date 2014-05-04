@@ -32,6 +32,8 @@ public class SelectUserActivity extends Activity
 	private EditText name_input;
 	private String user_name;
 	private ArrayList<String[]> data = null;
+	
+	private String delete_user_name = "";
 
 	
 	@Override
@@ -159,7 +161,50 @@ public class SelectUserActivity extends Activity
 				rb[i] = new RadioButton(this);
 				names.addView(rb[i]);
 				rb[i].setText(data.get(i)[0]);
+				delete_user_name = data.get(i)[0];
 				rb[i].setTextColor(Color.WHITE);
+				rb[i].setOnLongClickListener(new View.OnLongClickListener() {
+					
+					@Override
+					public boolean onLongClick(final View v) {
+						// TODO Auto-generated method stub
+						
+						runOnUiThread(new Runnable(){
+
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								DialogInterface.OnClickListener dialogListener = new DialogInterface.OnClickListener() {
+									
+									@Override
+									public void onClick(DialogInterface dialog, int which) {
+										// TODO Auto-generated method stub
+										switch (which){
+								        case DialogInterface.BUTTON_POSITIVE:
+								            //Yes button clicked
+								        	
+								        	deleteUserData(delete_user_name);
+								        	finish();
+								        	startActivity(getIntent());
+								            break;
+
+								        case DialogInterface.BUTTON_NEGATIVE:
+								            //No button clicked
+								            break;
+								        }
+									}
+								};
+								AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
+								builder.setMessage("Delete Name?").setPositiveButton("Yes", dialogListener)
+									.setNegativeButton("No", dialogListener).show();
+							}
+							
+						});
+						
+						
+						return false;
+					}
+				});
 			}
 		
 			
@@ -197,6 +242,45 @@ public class SelectUserActivity extends Activity
 		getMenuInflater().inflate(R.menu.select_user, menu);
 		return true;
 	}
+	
+	public void deleteUserData(String name){
+		File nameList = new File(Environment.getExternalStorageDirectory(), "nameList.txt");
+		Scanner name_check=null;
+		FileWriter fw = null;
+		String copy_data="";
+		
+		try {	//scanner exist
+			name_check = new Scanner(nameList);
+			while(name_check.hasNext())
+			{
+					String aLine = name_check.nextLine();
+					String[] line_data = aLine.split("\t");
+					
+					if(!(name.trim()).equals(line_data[0].trim()))
+					{
+						copy_data += aLine + "\n";
+					}
+			}
+			
+			name_check.close();
+				
+			fw = new FileWriter(nameList);
+			fw.write(copy_data);
+			fw.close();
+			
+		} 
+		catch (IOException e) {	//no file
+			try {
+				nameList.createNewFile();
+
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			e.printStackTrace();
+		}
+		
+	}
+	
 	
 	@SuppressWarnings("resource")
 	public String[] getUserData(String name){
