@@ -25,6 +25,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.view.Menu;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -76,6 +77,8 @@ public class MicRepeater extends Activity
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_mic_repeater);
+		//keep screen on
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		
 		/*************************************************************************************************************
 		 * Set up volume controls.  Give the hardware controls to this activity for controlling media sounds.

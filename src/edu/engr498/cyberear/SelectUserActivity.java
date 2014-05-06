@@ -51,68 +51,68 @@ public class SelectUserActivity extends Activity
 				//start.setText(user_name.getText());
 				
 				user_name = name_input.getText().toString();
-				
-				if(userNameCheck(user_name))
-				{
-					//to the mode-selection page
-					String[] user_data = getUserData(user_name);
-					Intent intent;
-					if(user_data!=null){
+				if(!user_name.equals("")){	//name typed
+					if(userNameCheck(user_name))
+					{
+						//to the mode-selection page
+						String[] user_data = getUserData(user_name);
+						Intent intent;
+						if(user_data!=null){
 						
 						
 						
-					}
-					else{	//name found but no hearing check data
+						}
+						else{	//name found but no hearing check data
 							//send to hearing check page
-						intent = new Intent(SelectUserActivity.this, HearingCheck.class);
-						String title = name_input.getText().toString();
-						intent.putExtra(EXTRA_TITLE, title);
-						startActivity(intent);
-						//finish();
-						//startActivity(getIntent());
-					}
-					AlertDialog.Builder builder = new AlertDialog.Builder(SelectUserActivity.this);
-					builder.setMessage("Overwrite or Coninute to Hearing Aid")
-				       .setTitle("User exists")
-				       .setPositiveButton("Perform New Hearing Test",
-				        new DialogInterface.OnClickListener() {
-				            public void onClick(DialogInterface dialog, int whichButton) {
-								Intent intent = new Intent(SelectUserActivity.this, HearingCheck.class);
-								String title = name_input.getText().toString();
-								intent.putExtra(EXTRA_TITLE, title);
-								startActivity(intent);		
-								finish();
-								//startActivity(getIntent());
+							intent = new Intent(SelectUserActivity.this, HearingCheck.class);
+							String title = name_input.getText().toString();
+							intent.putExtra(EXTRA_TITLE, title);
+							startActivity(intent);
+							//finish();
+							//startActivity(getIntent());
+						}
+						AlertDialog.Builder builder = new AlertDialog.Builder(SelectUserActivity.this);
+						builder.setMessage("Overwrite or Coninute to Hearing Aid")
+							.setTitle("User exists")
+							.setPositiveButton("Perform New Hearing Test",
+									new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int whichButton) {
+									Intent intent = new Intent(SelectUserActivity.this, HearingCheck.class);
+									String title = name_input.getText().toString();
+									intent.putExtra(EXTRA_TITLE, title);
+									startActivity(intent);		
+									finish();
+									//startActivity(getIntent());
 
-				            }
-				        })		
-				       .setNegativeButton("Continue to Hearing Aid",
-				        new DialogInterface.OnClickListener() {
-				            public void onClick(DialogInterface dialog, int whichButton) {
-				            	double[] result = new double[14];
-				            	String[] user_data = getUserData(user_name);
-								String[] left = user_data[1].split(" ");
-								String[] right = user_data[2].split(" ");
-								for(int i=0; i<7; i++){
-									result[i] = Double.parseDouble(left[i].trim());
-									result[i+7] = Double.parseDouble(right[i].trim());
 								}
+							})		
+							.setNegativeButton("Continue to Hearing Aid",
+									new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int whichButton) {
+									double[] result = new double[14];
+									String[] user_data = getUserData(user_name);
+									String[] left = user_data[1].split(" ");
+									String[] right = user_data[2].split(" ");
+									for(int i=0; i<7; i++){
+										result[i] = Double.parseDouble(left[i].trim());
+										result[i+7] = Double.parseDouble(right[i].trim());
+									}
 								
-								//to do - send result to MicRepeater activity
-								Intent intent = new Intent(SelectUserActivity.this, MicRepeater.class);
-								intent.putExtra(EXTRA_TITLE, result);
-								startActivity(intent);
-								finish();
-				            }
-				        });
+									//to do - send result to MicRepeater activity
+									Intent intent = new Intent(SelectUserActivity.this, MicRepeater.class);
+									intent.putExtra(EXTRA_TITLE, result);
+									startActivity(intent);
+									finish();
+								}
+							});
 
 				       
 				       
 					
 			
 
-					AlertDialog dialog = builder.create();
-					dialog.show();
+						AlertDialog dialog = builder.create();
+						dialog.show();
 					
 /*					RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 					params.addRule(RelativeLayout.BELOW, R.id.button1);
@@ -148,16 +148,18 @@ public class SelectUserActivity extends Activity
 
 					r1.addView(hearingAid,params2);
 */
-				}
-				else
-				{
-					//to the hearing check page
-					Intent intent = new Intent(SelectUserActivity.this, HearingCheck.class);
-					String title = name_input.getText().toString();
-					intent.putExtra(EXTRA_TITLE, title);
-					startActivity(intent);
-					finish();
-					//startActivity(getIntent());
+					}
+					else
+					{
+						//to the hearing check page
+						Intent intent = new Intent(SelectUserActivity.this, HearingCheck.class);
+						String title = name_input.getText().toString();
+						intent.putExtra(EXTRA_TITLE, title);
+						startActivity(intent);
+						finish();
+						//startActivity(getIntent());
+					}
+				
 				}
 			}
 		});
@@ -225,13 +227,13 @@ public class SelectUserActivity extends Activity
 					// TODO Auto-generated method stub
 					double[] result = new double[14];
 					//String[] user_data = data.get((names.getCheckedRadioButtonId() - 1)%data.size());
-					
+
 					int index = -1;
 					int buttonID = names.getCheckedRadioButtonId();
 					View radioButton = names.findViewById(buttonID);
 					index = names.indexOfChild(radioButton);
+					if(index!=-1){	//radio button checked
 					String[] user_data = data.get(index);
-					
 					String[] left = user_data[1].split(" ");
 					String[] right = user_data[2].split(" ");
 					for(int i=0; i<7; i++){
@@ -244,6 +246,7 @@ public class SelectUserActivity extends Activity
 					intent.putExtra(EXTRA_TITLE, result);
 					startActivity(intent);
 					finish();
+					}
 				}
 			});
 		}

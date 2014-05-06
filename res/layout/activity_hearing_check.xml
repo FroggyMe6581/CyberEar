@@ -7,7 +7,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".HearingCheck"
-    android:background="#00F" >
+    android:background="@drawable/main_header_selector" >
 
     <TextView
         android:id="@+id/textView1"

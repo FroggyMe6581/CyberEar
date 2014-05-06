@@ -9,19 +9,6 @@
     tools:context=".MainActivity"
     android:background="@drawable/main_header_selector">
 
-    <TextView
-        android:id="@+id/textView1"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="36dp"
-        android:text="@string/invite"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:gravity="center"
-        android:textColor="#5CF"
-        android:textStyle="bold" />
-
     <Button
         android:id="@+id/button1"
         android:layout_width="match_parent"
@@ -41,5 +28,17 @@
         android:textColor="#000"
         android:text="@string/run_button"
         android:onClick="startAmplifier" />
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/button1"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="42dp"
+        android:gravity="center"
+        android:text="@string/invite"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textStyle="bold" />
 
 </RelativeLayout>
