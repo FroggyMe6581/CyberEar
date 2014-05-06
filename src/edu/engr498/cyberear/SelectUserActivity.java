@@ -32,8 +32,6 @@ public class SelectUserActivity extends Activity
 	private EditText name_input;
 	private String user_name;
 	private ArrayList<String[]> data = null;
-	
-	private String delete_user_name = "";
 
 	
 	@Override
@@ -41,6 +39,7 @@ public class SelectUserActivity extends Activity
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_select_user);
+		
 		final RelativeLayout r1 = (RelativeLayout) findViewById(R.id.rlSelectUser);
 		start = (Button) findViewById(R.id.button1);
 		name_input = (EditText) findViewById(R.id.editText1);
@@ -57,27 +56,20 @@ public class SelectUserActivity extends Activity
 				{
 					//to the mode-selection page
 					String[] user_data = getUserData(user_name);
+					Intent intent;
 					if(user_data!=null){
-						double[] result = new double[14];
-						String[] left = user_data[1].split(" ");
-						String[] right = user_data[2].split(" ");
-						for(int i=0; i<7; i++){
-							result[i] = Double.parseDouble(left[i].trim());
-							result[i+7] = Double.parseDouble(right[i].trim());
-						}
 						
-						//to do - send result to MicRepeater activity
-						Intent intent = new Intent(SelectUserActivity.this, MicRepeater.class);
-						intent.putExtra(EXTRA_TITLE, result);
 						
 						
 					}
 					else{	//name found but no hearing check data
 							//send to hearing check page
-						Intent intent = new Intent(SelectUserActivity.this, HearingCheck.class);
+						intent = new Intent(SelectUserActivity.this, HearingCheck.class);
 						String title = name_input.getText().toString();
 						intent.putExtra(EXTRA_TITLE, title);
 						startActivity(intent);
+						//finish();
+						//startActivity(getIntent());
 					}
 					AlertDialog.Builder builder = new AlertDialog.Builder(SelectUserActivity.this);
 					builder.setMessage("Overwrite or Coninute to Hearing Aid")
@@ -88,13 +80,29 @@ public class SelectUserActivity extends Activity
 								Intent intent = new Intent(SelectUserActivity.this, HearingCheck.class);
 								String title = name_input.getText().toString();
 								intent.putExtra(EXTRA_TITLE, title);
-								startActivity(intent);							 
+								startActivity(intent);		
+								finish();
+								//startActivity(getIntent());
 
 				            }
 				        })		
 				       .setNegativeButton("Continue to Hearing Aid",
 				        new DialogInterface.OnClickListener() {
 				            public void onClick(DialogInterface dialog, int whichButton) {
+				            	double[] result = new double[14];
+				            	String[] user_data = getUserData(user_name);
+								String[] left = user_data[1].split(" ");
+								String[] right = user_data[2].split(" ");
+								for(int i=0; i<7; i++){
+									result[i] = Double.parseDouble(left[i].trim());
+									result[i+7] = Double.parseDouble(right[i].trim());
+								}
+								
+								//to do - send result to MicRepeater activity
+								Intent intent = new Intent(SelectUserActivity.this, MicRepeater.class);
+								intent.putExtra(EXTRA_TITLE, result);
+								startActivity(intent);
+								finish();
 				            }
 				        });
 
@@ -148,6 +156,8 @@ public class SelectUserActivity extends Activity
 					String title = name_input.getText().toString();
 					intent.putExtra(EXTRA_TITLE, title);
 					startActivity(intent);
+					finish();
+					//startActivity(getIntent());
 				}
 			}
 		});
@@ -161,7 +171,7 @@ public class SelectUserActivity extends Activity
 				rb[i] = new RadioButton(this);
 				names.addView(rb[i]);
 				rb[i].setText(data.get(i)[0]);
-				delete_user_name = data.get(i)[0];
+				final String delete_user_name = data.get(i)[0];
 				rb[i].setTextColor(Color.WHITE);
 				rb[i].setOnLongClickListener(new View.OnLongClickListener() {
 					
@@ -214,7 +224,14 @@ public class SelectUserActivity extends Activity
 				public void onClick(View v) {
 					// TODO Auto-generated method stub
 					double[] result = new double[14];
-					String[] user_data = data.get(names.getCheckedRadioButtonId());
+					//String[] user_data = data.get((names.getCheckedRadioButtonId() - 1)%data.size());
+					
+					int index = -1;
+					int buttonID = names.getCheckedRadioButtonId();
+					View radioButton = names.findViewById(buttonID);
+					index = names.indexOfChild(radioButton);
+					String[] user_data = data.get(index);
+					
 					String[] left = user_data[1].split(" ");
 					String[] right = user_data[2].split(" ");
 					for(int i=0; i<7; i++){
@@ -226,6 +243,7 @@ public class SelectUserActivity extends Activity
 					Intent intent = new Intent(SelectUserActivity.this, MicRepeater.class);
 					intent.putExtra(EXTRA_TITLE, result);
 					startActivity(intent);
+					finish();
 				}
 			});
 		}
@@ -241,6 +259,12 @@ public class SelectUserActivity extends Activity
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.select_user, menu);
 		return true;
+	}
+	
+	@Override
+	protected void onResume()
+	{
+		super.onResume();
 	}
 	
 	public void deleteUserData(String name){

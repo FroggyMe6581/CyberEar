@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
@@ -44,15 +45,16 @@ public class MicRepeater extends Activity
 	private boolean finished = false;			// when done playing, finished is set to stop while-loop.  Only true long enough to stop.
 	private boolean playing = false;			// playing audio.  boolean to toggle effect of button
 	private int sampleRate = 44100;
-	private int trackLength = 0; //2048;		// default length of sample array to work with: ~0.05s.  Lengthened by minSize if nec'ary.
+	//private int trackLength = 0; //2048;		// default length of sample array to work with: ~0.05s.  Lengthened by minSize if nec'ary.
 	private int minSize;						// minimum size of trackLength necessary; trackLength is lengthened to this if nec'ary.
 	private int bufferSize = 128; //512;		// size of buffer when reading from AudioRecord and writing to AudioTrack
 	private double average = 0;					// RMS average of signal being sent to AudioTrack
+	private double dBs = 0;						// decibel value of signal being sent to speakers.
 	private int maxVol;
 	
 	private SeekBar balControl;
 	private SeekBar volControl;
-	private TextView averageDisp;				// displays RMS average of signal, using double average for value.
+	private TextView averageDisp;				// displays decibels now, not RMS average of signal, using double dBs for value.
 	private TextView volDisp;					// displays volume setting by volume number (usually 0-15)
 	
 	private TextView balRatio;
@@ -66,6 +68,8 @@ public class MicRepeater extends Activity
 	
 	private Equalizer EQL;						//EQ Left
 	private Equalizer EQR;						//EQ Right
+	private double[] decibels;					//from intent
+	private double[] k_values;					//calculated here.
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -147,10 +151,11 @@ public class MicRepeater extends Activity
 		});
 		
 		/*************************************************************************************************************
-		 * Set up text field for displaying RMS average of signal before going to AudioTrack
+		 * Set up text field for displaying --RMS average-- decibels of signal before going to AudioTrack
 		 ************************************************************************************************************/
 		averageDisp = (TextView) findViewById(R.id.textView2);
-		averageDisp.setText(Double.toString(average));
+		//averageDisp.setText(Double.toString(average));
+		averageDisp.setText(Double.toString(dBs));
 		
 		/*************************************************************************************************************
 		 * Set up text field for displaying current volume setting (0-15)
@@ -173,13 +178,15 @@ public class MicRepeater extends Activity
 				    {
 				    	int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 				    	volDisp.setText(Integer.toString(vol));
-						averageDisp.setText(Double.toString(average));
+						//averageDisp.setText(Double.toString(average));
+				    	averageDisp.setText(Double.toString(dBs));
 						volControl.setProgress(vol);
 				    }
 				});
 			}
 		}, 0, period);
 		
+		calculate_k_values();
 	}
 	
 	@Override
@@ -187,8 +194,11 @@ public class MicRepeater extends Activity
 	{
 		super.onResume();
 		
-		if((minSize = AudioRecord.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT)) > trackLength)
-			trackLength = minSize;
+		int recordLength = 0;
+		int trackLength = 0;
+		
+		if((minSize = AudioRecord.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT)) > recordLength)
+			recordLength = minSize;
 		
 		if((minSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_STEREO,AudioFormat.ENCODING_PCM_16BIT)) > trackLength)
 			trackLength = minSize;
@@ -196,17 +206,17 @@ public class MicRepeater extends Activity
 		if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
 		{
 			audioRecord = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER, sampleRate, AudioFormat.CHANNEL_IN_MONO,
-										  AudioFormat.ENCODING_PCM_16BIT, trackLength*2);
+										  AudioFormat.ENCODING_PCM_16BIT, recordLength*2);
 		}
 		else if(Build.VERSION.SDK_INT >= 7)
 		{
 			audioRecord = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER, sampleRate, AudioFormat.CHANNEL_IN_MONO,
-										  AudioFormat.ENCODING_PCM_16BIT, trackLength);
+										  AudioFormat.ENCODING_PCM_16BIT, recordLength);
 		}
 		else
 		{
 			audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO,
-					  AudioFormat.ENCODING_PCM_16BIT, trackLength);
+					  AudioFormat.ENCODING_PCM_16BIT, recordLength);
 		}
 		
 		if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -277,8 +287,12 @@ public class MicRepeater extends Activity
 		//if(Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR1)
 		//	bufferSize = this.trackLength;			//with a short[], this adds a LOT of latency, so eventually delete these commented lines!
 		
-		EQL = new Equalizer(bufferSize, 2, 4, 2, 2, 2, 0.1, 0.1);
-		EQR = new Equalizer(bufferSize, 2, 4, 2, 2, 2, 0.1, 0.1);
+		//EQL = new Equalizer(bufferSize, 2, 4, 2, 2, 2, 0.1, 0.1);
+		//EQR = new Equalizer(bufferSize, 2, 4, 2, 2, 2, 0.1, 0.1);
+		//EQL = new Equalizer(bufferSize, 1, 1, 1, 1, 1, 2, 2);
+		//EQR = new Equalizer(bufferSize, 0.1, 2, 0.1, 0.1, 0.1, 0.1, 0.1);
+		EQL = new Equalizer(bufferSize, k_values[0], k_values[1], k_values[2], k_values[ 3], k_values[ 4], k_values[ 5], k_values[ 6]);
+		EQR = new Equalizer(bufferSize, k_values[7], k_values[8], k_values[9], k_values[10], k_values[11], k_values[12], k_values[13]);
 		//Equalizer safeEarsEQ = new Equalizer(bufferSize, 1, 1, 1, 1, 0.1, 0.01, 0.01);
 		
 		short[] samples = new short[bufferSize];		//better latency if a byte[], but short[] gives better RMS response
@@ -288,6 +302,7 @@ public class MicRepeater extends Activity
 		int samplesRead;
 		
 		average = 0;
+		dBs = 0;
 		short sampleShort = 0;
 		long avgSum = 0;
 
@@ -299,6 +314,7 @@ public class MicRepeater extends Activity
 		int j;
 		int smoothDist;
 		int counter = 0;
+		boolean ouch = false;
 		
 		while(!finished)
 		{
@@ -354,11 +370,16 @@ public class MicRepeater extends Activity
 		      }
 		      average = Math.sqrt( ((double)avgSum)/((double)samplesRead) );
 		      avgSum = 0;
+		      dBs = LookUpTable.getDb(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC), average);
+		      dBs = average;
 		      // write root-mean-square average to textView
-		      if(average > 15000)
+		      
+		      //Impulse protection:
+		      if(average > 8000 && !ouch)
 		      {
+		    	  ouch = true;
 		    	  currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-		    	  counter = 2;
+		    	  counter = 100;
 		    	  int newVolume = currentVolume - 5;
 		    	  if(newVolume < 0)
 		    		  newVolume = 1;
@@ -369,7 +390,10 @@ public class MicRepeater extends Activity
 		      {
 		    	  counter--;
 		    	  if(counter == 0)
+		    	  {
 		    		  audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume, 0);
+		    		  ouch = false;
+		    	  }
 		      }
 		      
 		      
@@ -476,6 +500,51 @@ public class MicRepeater extends Activity
 		}
 		
 		audioTrack.setStereoVolume(right, left);
+	}
+	
+	public void calculate_k_values()
+	{
+		Intent intent = getIntent();
+		decibels = intent.getDoubleArrayExtra(SelectUserActivity.EXTRA_TITLE);
+		k_values = new double[14];
+		
+		double lowest_dBL = decibels[0];
+		double lowest_dBR = decibels[7];
+		double highest_dBL = 0;
+		double highest_dBR = 0;
+		double A;
+		
+		for(int i = 0; i < 7; i++)
+		{
+			if(decibels[i] < lowest_dBL)
+				lowest_dBL = decibels[i];
+			if(decibels[i] > highest_dBL)
+				highest_dBL = decibels[i];
+		}
+		for(int i = 7; i < 14; i++)
+		{
+			if(decibels[i] < lowest_dBR)
+				lowest_dBR = decibels[i];
+			if(decibels[i] > highest_dBR)
+				highest_dBR = decibels[i];
+		}
+		for(int i = 0; i < 7; i++)
+		{
+			if(decibels[i] > decibels[i+7])
+				decibels[i] += decibels[i] - decibels[i+7];
+			if(decibels[i+7] > decibels[i])
+				decibels[i+7] += decibels[i+7] - decibels[i];
+		}
+		for(int i = 0; i < 7; i++)
+		{
+			A = decibels[i] - lowest_dBL;
+			k_values[i] = Math.pow(10, A/20);
+		}
+		for(int i = 7; i < 14; i++)
+		{
+			A = decibels[i] - lowest_dBR;
+			k_values[i] = Math.pow(10, A/20);
+		}
 	}
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
