@@ -65,4 +65,13 @@ public class Filter
 		
 		return y;
 	}
+	
+	public void change_k(double k)
+	{
+		this.k = k;
+		
+		b0xK = b0*k;
+		b1xK = b1*k;
+		b2xK = b2*k;
+	}
 }

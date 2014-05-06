@@ -30,6 +30,9 @@
     <string name="test_volume_text">10</string>
     <string name="end_activity_button">Back</string>
     <string name="title_activity_select_user">Select User</string>
+    <string name="bass">Increase Bass</string>
+    <string name="hiss">Decrease Hiss</string>
+    <string name="revert">Revert</string>
 
     <!-- from HearingCheck by Seung -->
     <string name="first_screen">First Screen</string>

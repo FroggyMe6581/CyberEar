@@ -27,6 +27,7 @@ import android.view.Menu;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
@@ -55,7 +56,8 @@ public class MicRepeater extends Activity
 	
 	private SeekBar balControl;
 	private SeekBar volControl;
-	private TextView averageDisp;				// displays decibels now, not RMS average of signal, using double dBs for value.
+	//private TextView averageDisp;				// displays decibels now, not RMS average of signal, using double dBs for value.
+	private ProgressBar vuMeter;
 	private TextView volDisp;					// displays volume setting by volume number (usually 0-15)
 	
 	private TextView balRatio;
@@ -71,6 +73,7 @@ public class MicRepeater extends Activity
 	private Equalizer EQR;						//EQ Right
 	private double[] decibels;					//from intent
 	private double[] k_values;					//calculated here.
+	private double[] orig_k_values;				//to revert if equalizer played with.
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -125,7 +128,7 @@ public class MicRepeater extends Activity
 		rightVolume = 1000 - leftVolume;
 
 		balRatio = (TextView) findViewById(R.id.textView5);
-		balRatio.setText(leftVolume + ":" + rightVolume);
+		balRatio.setText(rightVolume + ":" + leftVolume);
 		balControl.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
 			@Override
 			public void onProgressChanged(SeekBar seekBar, int progress,boolean fromUser)
@@ -134,7 +137,7 @@ public class MicRepeater extends Activity
 				leftVolume = progress; //balControl.getProgress();
 				rightVolume = 1000 - leftVolume;
 				
-				balRatio.setText(leftVolume + ":" +rightVolume);
+				balRatio.setText(rightVolume + ":" + leftVolume);
 				if(!finished)
 				{
 					setLeftRightVolume(leftVolume/1000, rightVolume/1000);
@@ -155,10 +158,12 @@ public class MicRepeater extends Activity
 		
 		/*************************************************************************************************************
 		 * Set up text field for displaying --RMS average-- decibels of signal before going to AudioTrack
+		 * NOW: set up ProgressBar for vu-meter
 		 ************************************************************************************************************/
-		averageDisp = (TextView) findViewById(R.id.textView2);
+		//averageDisp = (TextView) findViewById(R.id.textView2);
 		//averageDisp.setText(Double.toString(average));
-		averageDisp.setText(Double.toString(dBs));
+		//averageDisp.setText(Double.toString(dBs));
+		vuMeter = (ProgressBar) findViewById(R.id.vumeter);
 		
 		/*************************************************************************************************************
 		 * Set up text field for displaying current volume setting (0-15)
@@ -182,7 +187,13 @@ public class MicRepeater extends Activity
 				    	int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 				    	volDisp.setText(Integer.toString(vol));
 						//averageDisp.setText(Double.toString(average));
-				    	averageDisp.setText(Double.toString(dBs));
+				    	//averageDisp.setText(Double.toString(dBs));
+				    	int level = (int)(100.0/30.0*(dBs - 60));	//range from 60 dB to 90 dB
+				    	if(level < 0)
+				    		level = 0;
+				    	if(level > 100)
+				    		level = 100;
+				    	vuMeter.setProgress(level);
 						volControl.setProgress(vol);
 				    }
 				});
@@ -296,7 +307,7 @@ public class MicRepeater extends Activity
 		//EQR = new Equalizer(bufferSize, 0.1, 2, 0.1, 0.1, 0.1, 0.1, 0.1);
 		EQL = new Equalizer(bufferSize, k_values[0], k_values[1], k_values[2], k_values[ 3], k_values[ 4], k_values[ 5], k_values[ 6]);
 		EQR = new Equalizer(bufferSize, k_values[7], k_values[8], k_values[9], k_values[10], k_values[11], k_values[12], k_values[13]);
-		//Equalizer safeEarsEQ = new Equalizer(bufferSize, 1, 1, 1, 1, 0.1, 0.01, 0.01);
+		Equalizer safeEarsEQ = new Equalizer(bufferSize, 1, 1, 1, 1, 0.1, 0.01, 0.01);
 		
 		short[] samples = new short[bufferSize];		//better latency if a byte[], but short[] gives better RMS response
 		short[] samplesStereo = new short[2*bufferSize];
@@ -374,20 +385,44 @@ public class MicRepeater extends Activity
 		      average = Math.sqrt( ((double)avgSum)/((double)samplesRead) );
 		      avgSum = 0;
 		      dBs = LookUpTable.getDb(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC), average);
-		      dBs = average;
+		      //dBs = average;
 		      // write root-mean-square average to textView
 		      
 		      //Impulse protection:
-		      if(average > 8000 && !ouch)
+		      if(average > 8500 && !ouch)
+		      {
+		    	  ouch = true;
+		    	  currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+		    	  counter = 200;
+		    	  int newVolume = currentVolume - 5;
+		    	  if(newVolume < 0)
+		    		  newVolume = 1;
+		    	  
+		    	  audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0);
+		    	  EQL.adjust_EQ(k_values[0], k_values[1], k_values[2], k_values[ 3], k_values[ 4], 0.1, 0.01);
+		    	  EQR.adjust_EQ(k_values[7], k_values[8], k_values[9], k_values[10], k_values[11], 0.1, 0.01);
+		    	  
+		    	  //eqSamplesLeft = safeEarsEQ.equalize(eqSamplesLeft);
+		    	  //eqSamplesRight = safeEarsEQ.equalize(eqSamplesRight);
+		    	  for( int i = 0; i < samplesStereo.length; i++ )
+			      {
+		    		  samplesStereo[i] /= 2;
+			      }
+		      }
+		      else if(average > 8000 && !ouch)
 		      {
 		    	  ouch = true;
 		    	  currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 		    	  counter = 100;
-		    	  int newVolume = currentVolume - 5;
+		    	  int newVolume = currentVolume - 2;
 		    	  if(newVolume < 0)
 		    		  newVolume = 1;
+		    	  
 		    	  audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0);
-		    	  //eqSamples = safeEarsEQ.equalize(eqSamples);
+		    	  for( int i = 0; i < samplesStereo.length; i++ )
+			      {
+		    		  samplesStereo[i] /= 1.5;
+			      }
 		      }
 		      if(counter > 0)
 		      {
@@ -395,6 +430,8 @@ public class MicRepeater extends Activity
 		    	  if(counter == 0)
 		    	  {
 		    		  audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume, 0);
+		    		  EQL.adjust_EQ(k_values[0], k_values[1], k_values[2], k_values[ 3], k_values[ 4], k_values[ 5], k_values[ 6]);
+		    		  EQR.adjust_EQ(k_values[7], k_values[8], k_values[9], k_values[10], k_values[11], k_values[12], k_values[13]);
 		    		  ouch = false;
 		    	  }
 		      }
@@ -473,10 +510,67 @@ public class MicRepeater extends Activity
 		balControl.setProgress(500);
 		leftVolume = balControl.getProgress();
 		rightVolume = 1000 - leftVolume;
-		balRatio.setText(leftVolume+":"+rightVolume);
+		balRatio.setText(rightVolume+":"+leftVolume);
 		if(!finished)
 		{
 			setLeftRightVolume(leftVolume/1000, rightVolume/1000);
+		}
+	}
+	
+	/***********************************************
+	 * Callback for decreasing hiss button
+	 ***********************************************/
+	public void decrease_treble_k(View view)
+	{
+		k_values[ 5] /= 1.1;
+		k_values[ 6] /= 1.1;
+		k_values[12] /= 1.1;
+		k_values[13] /= 1.1;
+		
+		if(EQL != null && EQR != null)
+		{
+			EQL.adjust_EQ(k_values[0], k_values[1], k_values[2], k_values[ 3], k_values[ 4], k_values[ 5], k_values[ 6]);
+			EQR.adjust_EQ(k_values[7], k_values[8], k_values[9], k_values[10], k_values[11], k_values[12], k_values[13]);
+		}
+		
+	}
+	
+	/**********************************************
+	 * Callback for increasing bass button
+	 **********************************************/
+	public void increase_bass_k(View view)
+	{
+		k_values[0] *= 1.1;
+		k_values[1] *= 1.1;
+		k_values[7] *= 1.1;
+		k_values[8] *= 1.1;
+		
+		if(EQL != null && EQR != null)
+		{
+			EQL.adjust_EQ(k_values[0], k_values[1], k_values[2], k_values[ 3], k_values[ 4], k_values[ 5], k_values[ 6]);
+			EQR.adjust_EQ(k_values[7], k_values[8], k_values[9], k_values[10], k_values[11], k_values[12], k_values[13]);
+		}
+	}
+	
+	/**********************************************
+	 * Callback for resetting k values button
+	 **********************************************/
+	public void reset_k_values(View view)
+	{
+		k_values[ 5] = orig_k_values[ 5];
+		k_values[ 6] = orig_k_values[ 6];
+		k_values[12] = orig_k_values[12];
+		k_values[13] = orig_k_values[13];
+		
+		k_values[0] = orig_k_values[0];
+		k_values[1] = orig_k_values[1];
+		k_values[7] = orig_k_values[7];
+		k_values[8] = orig_k_values[8];
+		
+		if(EQL != null && EQR != null)
+		{
+			EQL.adjust_EQ(k_values[0], k_values[1], k_values[2], k_values[ 3], k_values[ 4], k_values[ 5], k_values[ 6]);
+			EQR.adjust_EQ(k_values[7], k_values[8], k_values[9], k_values[10], k_values[11], k_values[12], k_values[13]);
 		}
 	}
 	
@@ -510,6 +604,7 @@ public class MicRepeater extends Activity
 		Intent intent = getIntent();
 		decibels = intent.getDoubleArrayExtra(SelectUserActivity.EXTRA_TITLE);
 		k_values = new double[14];
+		orig_k_values = new double[14];
 		
 		double lowest_dBL = decibels[0];
 		double lowest_dBR = decibels[7];
@@ -531,6 +626,7 @@ public class MicRepeater extends Activity
 			if(decibels[i] > highest_dBR)
 				highest_dBR = decibels[i];
 		}
+		/*
 		for(int i = 0; i < 7; i++)
 		{
 			if(decibels[i] > decibels[i+7])
@@ -538,15 +634,18 @@ public class MicRepeater extends Activity
 			if(decibels[i+7] > decibels[i])
 				decibels[i+7] += decibels[i+7] - decibels[i];
 		}
+		*/
 		for(int i = 0; i < 7; i++)
 		{
 			A = decibels[i] - lowest_dBL;
 			k_values[i] = Math.pow(10, A/20);
+			orig_k_values[i] = k_values[i];
 		}
 		for(int i = 7; i < 14; i++)
 		{
 			A = decibels[i] - lowest_dBR;
 			k_values[i] = Math.pow(10, A/20);
+			orig_k_values[i] = k_values[i];
 		}
 	}
 	
@@ -561,7 +660,7 @@ public class MicRepeater extends Activity
 		balControl.setProgress(balControl.getProgress() + 10);
 		leftVolume = balControl.getProgress();
 		rightVolume = 1000 - leftVolume;
-		balRatio.setText(leftVolume+":"+rightVolume);
+		balRatio.setText(rightVolume+":"+leftVolume);
 		if(!finished)
 		{
 			setLeftRightVolume(leftVolume/1000, rightVolume/1000);
@@ -575,7 +674,7 @@ public class MicRepeater extends Activity
 		balControl.setProgress(balControl.getProgress() - 10);
 		leftVolume = balControl.getProgress();
 		rightVolume = 1000 - leftVolume;
-		balRatio.setText(leftVolume+":"+rightVolume);
+		balRatio.setText(rightVolume+":"+leftVolume);
 		if(!finished)
 		{
 			setLeftRightVolume(leftVolume/1000, rightVolume/1000);

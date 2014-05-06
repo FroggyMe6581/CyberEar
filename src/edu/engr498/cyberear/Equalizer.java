@@ -40,4 +40,15 @@ public class Equalizer
 		
 		return y;
 	}
+	
+	public void adjust_EQ(double k_125, double k_250, double k_500, double k_1000, double k_2000, double k_4000, double k_8000)
+	{
+		f_125.change_k(k_125);
+		f_250.change_k(k_250);
+		f_500.change_k(k_500);
+		f_1000.change_k(k_1000);
+		f_2000.change_k(k_2000);
+		f_4000.change_k(k_4000);
+		f_8000.change_k(k_8000);
+	}
 }
