@@ -74,6 +74,10 @@ public class MicRepeater extends Activity
 	private double[] decibels;					//from intent
 	private double[] k_values;					//calculated here.
 	private double[] orig_k_values;				//to revert if equalizer played with.
+	
+	private static double duration = 0;			//For Automatic Gain Control
+	private float lastLeft = 1.0f;				//For AGC
+	private float lastRight = 1.0f;				//For AGC
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -309,7 +313,7 @@ public class MicRepeater extends Activity
 		EQR = new Equalizer(bufferSize, k_values[7], k_values[8], k_values[9], k_values[10], k_values[11], k_values[12], k_values[13]);
 		Equalizer safeEarsEQ = new Equalizer(bufferSize, 1, 1, 1, 1, 0.1, 0.01, 0.01);
 		
-		short[] samples = new short[bufferSize];		//better latency if a byte[], but short[] gives better RMS response
+		short[] samples = new short[bufferSize];
 		short[] samplesStereo = new short[2*bufferSize];
 		short[] eqSamplesLeft; // = new short[bufferSize];
 		short[] eqSamplesRight;
@@ -324,9 +328,6 @@ public class MicRepeater extends Activity
 		audioTrack.play();
 		
 		int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-		int volumeGradient;
-		int j;
-		int smoothDist;
 		int counter = 0;
 		boolean ouch = false;
 		
@@ -338,22 +339,9 @@ public class MicRepeater extends Activity
 			  eqSamplesLeft = EQL.equalize(samples);
 			  eqSamplesRight = EQR.equalize(samples);
 			  
-			  /*
-			  if(counter > 0)
-		      {
-		    	  eqSamples = safeEarsEQ.equalize(samples);
-		    	  counter--;
-		      }
-			  else
-			  {
-				  eqSamples = EQ.equalize(samples);
-			  }
-			  */
-			  
-			  
 			  //currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-			  // Impulse protection
-			  // & collect RMS average
+			  
+			  // collect RMS average
 		      for( int i = 0; i < samplesRead; i++ )
 		      {
 		    	  /*
@@ -378,15 +366,12 @@ public class MicRepeater extends Activity
 		    	  samplesStereo[2*i] = eqSamplesLeft[i];
 		    	  samplesStereo[2*i + 1] = eqSamplesRight[i];
 		    	  
-		          // sampleShort is only a fraction of maximum short (32767), as scaled by -1 to 1 sine wave * 0 to 1 amplitude
 		    	  sampleShort = (short)(((long)eqSamplesLeft[i] + (long)eqSamplesRight[i])/2);
 		          avgSum += ((long)sampleShort)*((long)sampleShort);
 		      }
 		      average = Math.sqrt( ((double)avgSum)/((double)samplesRead) );
 		      avgSum = 0;
 		      dBs = LookUpTable.getDb(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC), average);
-		      //dBs = average;
-		      // write root-mean-square average to textView
 		      
 		      //Impulse protection:
 		      if(average > 8500 && !ouch)
@@ -436,7 +421,7 @@ public class MicRepeater extends Activity
 		    	  }
 		      }
 		      
-		      
+		      checkVol();
 		      audioTrack.write(samplesStereo, 0, 2*samplesRead);
 		}
 		audioTrack.pause();
@@ -596,6 +581,8 @@ public class MicRepeater extends Activity
 			right = 1.0f;
 		}
 		
+		lastLeft = left;
+		lastRight = right;
 		audioTrack.setStereoVolume(right, left);
 	}
 	
@@ -647,6 +634,54 @@ public class MicRepeater extends Activity
 			k_values[i] = Math.pow(10, A/20);
 			orig_k_values[i] = k_values[i];
 		}
+	}
+	
+	/***********************************************************************************************************************
+	 * A silly Automatic Gain Control
+	 ***********************************************************************************************************************
+	 * false if no adjustment of volume necessary.
+	 * true if calling Activity with the AudioTrack should reduce volume by 95%,
+	 * (External caller will use AudioTrack.setStereoVolume(float left, float right).  It should keep track of the last
+	 * volumes used, and multiply these by 0.95, if true is returned)
+	 * 
+	 * Naw, just do it here.
+	 ************************************************************************************************************************/
+	public void checkVol()
+	{
+		duration += ((double)bufferSize)/44100.0;
+		
+		if(dBs >= 132)
+		{
+			lastLeft *= 0.95;
+			lastRight *= 0.95;
+			audioTrack.setStereoVolume(lastRight, lastLeft);
+		}
+		else if( (dBs >= 115) && (duration > 900) )
+		{
+			lastLeft *= 0.95;
+			lastRight *= 0.95;
+			audioTrack.setStereoVolume(lastRight, lastLeft);
+		}
+	    else if( (dBs >= 110) && (duration > 1800) )
+	    {
+			lastLeft *= 0.95;
+			lastRight *= 0.95;
+			audioTrack.setStereoVolume(lastRight, lastLeft);
+		}
+	    else if( (dBs >= 105) && (duration > 3600) )
+	    {
+			lastLeft *= 0.95;
+			lastRight *= 0.95;
+			audioTrack.setStereoVolume(lastRight, lastLeft);
+		}
+	    else if( dBs >= 105 )
+	    {
+	    	//do nothing
+	    }
+	    else
+	    {
+	    	duration = 0;
+	    }
 	}
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
