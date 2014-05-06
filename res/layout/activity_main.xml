@@ -39,6 +39,7 @@
         android:gravity="center"
         android:text="@string/invite"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:textColor="#5CF" />
 
 </RelativeLayout>

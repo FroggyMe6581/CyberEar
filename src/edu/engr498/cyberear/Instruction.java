@@ -33,11 +33,11 @@ public class Instruction extends Activity {
 
 		//set con1
 
-		con1.setText("\t\tIf you are new user, please enter your name." +
+		con1.setText("\t\tIf you are a new user, please enter your name.\t" +
 
-		"Then, you should complete the Hearing Check." +
+		"Then you should complete the Hearing Check.\n\n" +
 
-		"During the Hearing Check, press 'I Can Hear' button only after " +
+		"During the Hearing Check, press the 'I Can Hear' button only after " +
 
 		"you hear a sound.");
 
@@ -47,16 +47,19 @@ public class Instruction extends Activity {
 
 		title2.setText("2. Start Hearing Aid");
 
-		con2.setText("\t\tWhen you complete the Hearing Check, you can start the hearing aid." +
+		con2.setText("\t\tWhen you complete the Hearing Check, you can start the hearing aid.\n\n" +
 
-		"Press 'Start Playback' buton to start." +
+		"Press the 'Start Playback' button to start.\n\n" +
 
-		"You can adjust the volume with 'Volume Bar'." +
+		"You can adjust the volume with the 'Volume Bar'.\n\n" +
 
-		"Also, you can adjust left volume and right volume differently by using the" +
+		"Also, you can adjust left volume and right volume separately by using the " +
 
-
-		"'Balance Bar'.");
+		"'Balance Bar'.\n\n" +
+		
+		"To lower the treble, tap 'Decrease Hiss' until the desired level is met.  " +
+		"To increase bass, tap 'Increase Bass' until the desired level is met.  " + 
+		"Press 'Revert' to set the sound quality back to the original setting.");
 
 
 
@@ -66,13 +69,15 @@ public class Instruction extends Activity {
 		title3.setText("3. Manage Names");
 
 
-		con3.setText("\t\tIf you've done the Hearing Check before, your name will be listed on the screen," +
+		con3.setText("\t\tIf you've done the Hearing Check before, your name will be listed on the screen, " +
 
-		"so you will not have to get Hearing Check again." +
+		"so you will not have to take the Hearing Check again.  " +
 
-		"You can simply click your name and press 'Start Button'." +
+		"You can simply click your name and press the second 'Start Button'.\n\n" +
 
-		"If you want to delete a name from list, press long the name.");
+		"If you want to delete a name from the list, hold down on the name to delete.\n\n" +
+		
+		"If sound quality is distorted, try retaking the hearing test by typing your name again.");
 
 		
 	}

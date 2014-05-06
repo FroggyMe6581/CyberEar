@@ -30,7 +30,7 @@
         android:layout_below="@+id/textView1"
         android:text="@string/enter_name"
         android:textAppearance="?android:attr/textAppearanceMedium"
-         />
+        android:textColor="#5CF" />
 
     <EditText
         android:id="@+id/editText1"
@@ -73,7 +73,7 @@
         android1:layout_below="@+id/button1"
         android1:layout_marginTop="27dp"
         android1:text="@string/select_name"
-        
+        android:textColor="#5CF"
         android1:textAppearance="?android:attr/textAppearanceMedium" />
 
     <Button
