@@ -8,8 +8,8 @@
     		<string name="run_button">RUN</string>
     
      -->
-    <string name="config_button">Select User\n\nor\n\n Perform New Hearing Testn</string>
-    <string name="run_button">Start Hearing Aid</string>
+    <string name="config_button">Select User\n\nor\n\n Perform New Hearing Test</string>
+    <string name="run_button">Instructions</string>
     <string name="title_activity_mic_repeater">Hearing Amplifier</string>
     <string name="hello_world">Hello world!</string>
     <string name="button_start">Start Playback</string>
@@ -17,7 +17,7 @@
     <string name="freq_hint">Enter Freq</string>
     <string name="set_amp">Set Amplitude</string>
     <string name="amp_hint">Enter Amplitude</string>
-    <string name="avg_value">RMS Average</string>
+    <string name="avg_value">Decibels</string>
     <string name="vol_value">Volume</string>
     <string name="vol_up">Vol Up</string>
     <string name="vol_dn">Vol Dn</string>

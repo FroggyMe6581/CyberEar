@@ -112,8 +112,9 @@ public class HearingCheck extends Activity
 				finished = true;
 				left_done = false;
 				freq_index = 0;
-				Intent intent = new Intent(HearingCheck.this, MainActivity.class);
-				startActivity(intent);
+				//Intent intent = new Intent(HearingCheck.this, MainActivity.class);
+				//startActivity(intent);
+				finish();
 			}
 		});
 		
@@ -295,6 +296,7 @@ public class HearingCheck extends Activity
 					Intent intent = new Intent(HearingCheck.this, MicRepeater.class);
 					intent.putExtra(EXTRA_TITLE, db_result);
 					startActivity(intent);
+					finish();
 					
 			}	
 			

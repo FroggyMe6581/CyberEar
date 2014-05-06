@@ -37,9 +37,12 @@ public class MainActivity extends Activity
 	{
 		super.onRestart();
 		
-		user_name = getIntent().getStringExtra(SelectUserActivity.EXTRA_TITLE);
+		//user_name = getIntent().getStringExtra(SelectUserActivity.EXTRA_TITLE);
+		//Intent intent = new Intent(this, SelectUserActivity.class);
+		//startActivity(intent);
 	}
 	
+	/*
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 	    // Check which request we're responding to
@@ -53,6 +56,8 @@ public class MainActivity extends Activity
 	        }
 	    }
 	}
+	*/
+	
 	/************************************************************************************************************************
 	 * Callback for when "RUN" button is pressed.  Starts Activity specified by MicRepeater class.
 	 * 
@@ -61,8 +66,8 @@ public class MainActivity extends Activity
 	public void startAmplifier(View view)
 	{
 		//if user is selected
-		Intent intent = new Intent(this, MicRepeater.class);
-		startActivity(intent);
+		//Intent intent = new Intent(this, MicRepeater.class);
+		//startActivity(intent);
 		//else
 		//	toast that a user needs to be selected.
 	}
@@ -74,7 +79,7 @@ public class MainActivity extends Activity
 	public void startHearingTestActivity(View view)
 	{
 		Intent intent = new Intent(this, SelectUserActivity.class);
-		startActivityForResult(intent, PICK_CONTACT_REQUEST);
+		startActivity(intent);
 	}
 
 }
