@@ -70,6 +70,9 @@ public class MainActivity extends Activity
 		//startActivity(intent);
 		//else
 		//	toast that a user needs to be selected.
+		Intent intent = new Intent(this, Instruction.class);
+		startActivity(intent);
+		
 	}
 	
 	/************************************************************************************************************************

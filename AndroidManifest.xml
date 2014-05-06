@@ -41,6 +41,11 @@
             android:label="@string/title_activity_hearing_check"
             android:screenOrientation="portrait" >
         </activity>
+        <activity
+            android:name="edu.engr498.cyberear.Instruction"
+            android:label="@string/title_activity_instruction"
+            android:screenOrientation="portrait" >
+        </activity>
     </application>
 
 </manifest>

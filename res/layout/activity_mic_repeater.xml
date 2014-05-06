@@ -8,7 +8,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MicRepeater"
-    android:background="#00F" >
+    android:background="@drawable/main_header_selector" >
 
     <SeekBar
         android:id="@+id/seekBar_vol"
@@ -45,7 +45,7 @@
         android:gravity="right"
         android:text="@string/test_volume_text"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:textColor="#5CF" />
+         />
 
     <TextView
         android:id="@+id/textView3"
@@ -54,7 +54,7 @@
         android:layout_alignRight="@+id/textView4"
         android:layout_below="@+id/textView4"
         android:text="@string/vol_value"
-        android:textColor="#5CF" />
+         />
 
     <Button
         android:id="@+id/button_center"
@@ -82,7 +82,7 @@
         android:layout_below="@+id/seekBar_bal"
         android:layout_marginTop="20dp"
         android:text="@string/bal_ratio"
-        android:textColor="#5CF" />
+         />
 
     <TextView
         android:id="@+id/textView6"
@@ -91,7 +91,7 @@
         android:layout_alignLeft="@+id/textView5"
         android:layout_below="@+id/seekBar_bal"
         android:text="@string/balance_marker"
-        android:textColor="#5CF" />
+        />
 
     <TextView
         android:id="@+id/textView2"
