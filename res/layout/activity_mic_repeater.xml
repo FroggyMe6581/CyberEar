@@ -139,7 +139,17 @@
         android:layout_alignBottom="@+id/button4"
         android:layout_alignTop="@+id/button3"
         android:layout_toRightOf="@+id/button3"
-        android:text="@string/revert"
-        android:onClick="reset_k_values" />
+        android:onClick="reset_k_values"
+        android:text="@string/revert" />
+
+    <Button
+        android:id="@+id/button6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/button4"
+        android:layout_alignRight="@+id/button4"
+        android:layout_below="@+id/button4"
+        android:onClick="toggle_impulse_protection"
+        android:text="@string/imp_prot_off" />
 
 </RelativeLayout>
