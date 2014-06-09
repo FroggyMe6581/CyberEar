@@ -78,6 +78,8 @@ public class MicRepeater extends Activity
 	private static double duration = 0;			//For Automatic Gain Control
 	private float lastLeft = 1.0f;				//For AGC
 	private float lastRight = 1.0f;				//For AGC
+	
+	private boolean impulse_protection = true;	//to turn on and off impulse protection.
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -374,39 +376,42 @@ public class MicRepeater extends Activity
 		      dBs = LookUpTable.getDb(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC), average);
 		      
 		      //Impulse protection:
-		      if(average > 8500 && !ouch)
+		      if(impulse_protection)
 		      {
-		    	  ouch = true;
-		    	  currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-		    	  counter = 200;
-		    	  int newVolume = currentVolume - 5;
-		    	  if(newVolume < 0)
-		    		  newVolume = 1;
-		    	  
-		    	  audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0);
-		    	  EQL.adjust_EQ(k_values[0], k_values[1], k_values[2], k_values[ 3], k_values[ 4], 0.1, 0.01);
-		    	  EQR.adjust_EQ(k_values[7], k_values[8], k_values[9], k_values[10], k_values[11], 0.1, 0.01);
-		    	  
-		    	  //eqSamplesLeft = safeEarsEQ.equalize(eqSamplesLeft);
-		    	  //eqSamplesRight = safeEarsEQ.equalize(eqSamplesRight);
-		    	  for( int i = 0; i < samplesStereo.length; i++ )
+		    	  if(average > 8500 && !ouch)
 			      {
-		    		  samplesStereo[i] /= 2;
+			    	  ouch = true;
+			    	  currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+			    	  counter = 200;
+			    	  int newVolume = currentVolume - 5;
+			    	  if(newVolume < 0)
+			    		  newVolume = 1;
+			    	  
+			    	  audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0);
+			    	  EQL.adjust_EQ(k_values[0], k_values[1], k_values[2], k_values[ 3], k_values[ 4], 0.1, 0.01);
+			    	  EQR.adjust_EQ(k_values[7], k_values[8], k_values[9], k_values[10], k_values[11], 0.1, 0.01);
+			    	  
+			    	  //eqSamplesLeft = safeEarsEQ.equalize(eqSamplesLeft);
+			    	  //eqSamplesRight = safeEarsEQ.equalize(eqSamplesRight);
+			    	  for( int i = 0; i < samplesStereo.length; i++ )
+				      {
+			    		  samplesStereo[i] /= 2;
+				      }
 			      }
-		      }
-		      else if(average > 8000 && !ouch)
-		      {
-		    	  ouch = true;
-		    	  currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-		    	  counter = 100;
-		    	  int newVolume = currentVolume - 2;
-		    	  if(newVolume < 0)
-		    		  newVolume = 1;
-		    	  
-		    	  audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0);
-		    	  for( int i = 0; i < samplesStereo.length; i++ )
+			      else if(average > 8000 && !ouch)
 			      {
-		    		  samplesStereo[i] /= 1.5;
+			    	  ouch = true;
+			    	  currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+			    	  counter = 100;
+			    	  int newVolume = currentVolume - 2;
+			    	  if(newVolume < 0)
+			    		  newVolume = 1;
+			    	  
+			    	  audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0);
+			    	  for( int i = 0; i < samplesStereo.length; i++ )
+				      {
+			    		  samplesStereo[i] /= 1.5;
+				      }
 			      }
 		      }
 		      if(counter > 0)
@@ -556,6 +561,25 @@ public class MicRepeater extends Activity
 		{
 			EQL.adjust_EQ(k_values[0], k_values[1], k_values[2], k_values[ 3], k_values[ 4], k_values[ 5], k_values[ 6]);
 			EQR.adjust_EQ(k_values[7], k_values[8], k_values[9], k_values[10], k_values[11], k_values[12], k_values[13]);
+		}
+	}
+	
+	/********************************************************************************************
+	 * Callback for toggling impulse protection (so loud environments don't make it go crazy)
+	 ********************************************************************************************/
+	public void toggle_impulse_protection(View view)
+	{
+		Button b = (Button) findViewById(R.id.button6);
+		
+		if(impulse_protection)
+		{
+			impulse_protection = false;
+			b.setText("Impulse Protection On");
+		}
+		else
+		{
+			impulse_protection = true;
+			b.setText("Impulse Protection Off");
 		}
 	}
 	

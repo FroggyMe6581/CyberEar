@@ -33,6 +33,7 @@
     <string name="bass">Increase Bass</string>
     <string name="hiss">Decrease Hiss</string>
     <string name="revert">Revert</string>
+    <string name="imp_prot_off">Impulse Protection Off</string>
 
     <!-- from HearingCheck by Seung -->
     <string name="first_screen">First Screen</string>
